@@ -7,7 +7,7 @@ Requirements:
 * Python 3.5+
 * tabs >> spaces
 
-Non-standard Packages:
+Non-standard packages:
 * matplotlib
 * numpy
 * gensim
@@ -16,11 +16,13 @@ Non-standard Packages:
 I apologize because I want this to be as self-contained as possible, but there may be other required
 python packages I am missing. If you see exceptions having to do with missing packages, just install
 them individually with pip3 and retry:
+
 	pip3 install --user [package name]
 
 Cheetah is simple to run. Cd into src/ and run main.py with python3:
-	cd src/
-	python3 main.py
+
+* cd src/
+* python3 main.py
 
 The main menu will present various options.
 The first task is to download the FastText english term-vector model from Facebook research to the 
