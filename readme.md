@@ -5,7 +5,6 @@ the full readme.
 
 Requirements:
 * Python 3.5+
-* tabs >> spaces
 
 Non-standard packages:
 * matplotlib
