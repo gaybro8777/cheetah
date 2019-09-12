@@ -1,0 +1,5 @@
+models/*
+results/*
+data/*
+*pyc
+*lint.txt
