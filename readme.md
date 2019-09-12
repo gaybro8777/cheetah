@@ -1,7 +1,7 @@
 The steps to run the Cheetah repro are as follows, and are provided by the tool. But please read 
 the full readme.
-# Download the english '.text' term vector model from facebook research (4.5GB, which may take up to an hour on slow connections)
-# Run main.py under python3 and select 'cheetah repro' in the main menu. Output results will be displayed and also stored in the results/ directory
+1. Download the english '.text' term vector model from facebook research (4.5GB, which may take up to an hour on slow connections)
+2. Run main.py under python3 and select 'cheetah repro' in the main menu. Output results will be displayed and also stored in the results/ directory
 
 Requirements:
 * Python 3.5+
@@ -27,7 +27,7 @@ The first task is to download the FastText english term-vector model from Facebo
 models/english/ directory. I provided a tool to do this, but you can also just manually download 
 the '.text' vector model via the website:
 * https://fasttext.cc/docs/en/crawl-vectors.html
-* -> english -> '.text' -> downloaded file is named "cc.en.300.vec.gz"
+* --> english -> '.text' -> downloaded file is named "cc.en.300.vec.gz"
 * Don't download the .bin model! Get the .text model
 * Unzip the model and place it at models/english/cc.en.300.vec.gz
 
