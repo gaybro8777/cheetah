@@ -48,6 +48,64 @@ def loadCheetahModel(modelPath):
 		return loadFastTextModel(modelPath)
 	return gensim.models.Word2Vec.load(modelPath)
 
+def sumCossim(sigTerms1, sigTerms2, model):
+	"""
+	Returns the net cossine similarity between two term sets using the term vectors in @model, and the number of term-misses in 
+	@sigTerms1 and @sigTerms2. The misses must be returned so the caller can weight the score by term hits.
+	"""
+	st1 = [w for w in sigTerms1 if w in model.wv.vocab]
+	st2 = [w for w in sigTerms2 if w in model.wv.vocab]
+	#Track and at least output the number of terms missing from @model
+	print("SumCossim(): num sigTerms1={}, {} after model filter. sigTerms2={}, {} after model filter.".format(len(sigTerms1), len(st1), len(sigTerms2), len(st2)))
+
+	netSim = 0.0
+	# cossim def: v1.dot(v2) / (|v1| * |v2|).  The norms can be cached and reused.
+	for s1 in st1:
+		s1Vec = model.wv[s1]
+		s1Norm = np.linalg.norm(s1Vec)
+		for s2 in st2:
+			s2Vec = model.wv[s2]
+			s2Norm = np.linalg.norm(s2Vec)
+			netSim += (s1Vec.dot(s2Vec) / (s1Norm*s2Norm))
+
+	sig1Misses = len(sigTerms1) - len(st1)
+	sig2Misses = len(sigTerms2) - len(st2)
+
+	return netSim, sig1Misses, sig2Misses
+
+def netAlgebraicSentiment(queryTerms, sentLex, model, avgByHits=True):
+	"""
+	@queryTerms: A list of terms representing a single topic, e.g. ["dog", "canine"]
+	@sentLex: A SentimentLexicon object
+	@model: A cheetah model, a dumbly-named wrapper for a term vector model returned by loadCheetahModel()
+	Given a list of topical terms, a SentimentLexicon, and a term-vector model, returns the net distance between
+	@queryTerms and positive/negative sentiment as a single real-value. This is defined as the sum 
+	similarity between @queryTerms and @sentLex.Positives, MINUS the similarity between @queryTerms and @sentLex.Negatives,
+	where similarity function is dot-product.
+	@weightByHits: If true, scores will be weighted by term hits in @model. For example, if topic t1 has two hits, and topic
+	t2 has 30, clearly this will scale their net sentiment if not averaged. 
+
+	The purpose of doing this is to analyze @model, not really @queryTerms nor @sentLex, even though they are function parameters. A
+	vector-based language model may have been biased by its training data (in some cases its the point of one), so this gives a
+	simple way of comparing that bias for different topics. For the most part this is "showing your work". I'm not yet sure how a model
+	could be normalized w.r.t. some topics to 'un-bias' the model algebraically, but its an important topic.
+	"""
+	posSim, qMisses, posMisses = sumCossim(queryTerms, sentLex.Positives, model)
+	negSim, qMisses, negMisses = sumCossim(queryTerms, sentLex.Negatives, model)
+	
+	if not avgByHits:
+		return posSim - negSim
+
+	posHits = len(sentLex.Positives) - posMisses
+	negHits = len(sentLex.Negatives) - negMisses
+
+	# Kludgiest normalization ever...
+	return posSim / posHits - negSim / negHits
+
+def netAlgebraicSentimentWrapper(queryTerms, sentimentFolder, model, avgByHits=True):
+	sentLex = SentimentLexicon(sentFolder=sentimentFolder)
+	return netAlgebraicSentiment(queryTerms, sentLex, model, avgByHits)
+
 #Given a list of terms, rank all terms in @model by their sum cossine similary to these terms
 def cossimLexiconGenerator(model, queryTerms):
 	rankedTerms = []

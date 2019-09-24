@@ -6,6 +6,7 @@ TODO:
 	0) Lint
 	1) Other algorithms, share regression, visualization, 
 	2) Test scripts
+	3) Design: based on dependencies, how can code be broken up? Currently this mixes top-level user input/output with analyses, models, etc
 """
 
 import sys
@@ -82,11 +83,11 @@ def selectFromFileList(flist, prompt="File list"):
 	selectedIndex = int(selectedOption)
 	return flist[selectedIndex]
 
-def selectDataFile():
+def selectDataFile(jsonDir):
 	# Select a file by name in some directory
-	jsonPaths = listFiles(dataDir, "json", verbose=False)
+	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path]
 	jsonPath = selectFromFileList(jsonPaths, prompt="Select a json dataset: ")
-	return os.path.join(dataDir,jsonPath)
+	return os.path.join(jsonDir,jsonPath)
 
 def downloadEnglishModel():
 	# One-shot, downloads English text model. This could support listing, selecting, and downloading instead, but not needed now.
@@ -108,21 +109,15 @@ def loadDataset():
 		unzipReproData(cheetahFolder)
 	else:
 		print("Dataset already unzipped to "+cheetahFolder+". Proceeding to dataset selection.")
-	jsonPath = selectDataFile()
+	jsonPath = selectDataFile(cheetahDir)
 	return ResultCollection.LoadCollections(jsonPath)
-
-def loadModel():
-	modelFname = "cc.en.300.vec.gz"
-	modelPath = os.path.join(modelDir, modelFname)
-	return cheetah.loadFastTextModel(modelPath)
 
 def cheetahAnalysis():
 	"""
 	-Select and load a dataset
 	-Run cheetah, outputting to results/ folder
 	"""
-	
-	resultCollections = loadDataset()	
+	resultCollections = loadDataset()
 	modelPath=os.path.join(modelDir, "english/cc.en.300.vec")
 	if not os.path.exists(modelPath):
 		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
@@ -134,7 +129,24 @@ def cheetahAnalysis():
 	cheetah_present.cheetahSentimentAnalysis(resultCollections, sentFolder, vectorModel, dtLow.date(), dtHigh.date(), dtGrouping="weekly", resultFolder=resultDir, useScoreWeight=False, useSoftMatch=False)
 
 def modelAnalysis():
-	print("Under construction")
+	"""
+	Analyze a model's sentiment bias wrt some input topics.
+	"""	
+	modelPath=os.path.join(modelDir, "english/cc.en.300.vec")
+	if not os.path.exists(modelPath):
+		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
+		return
+	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
+	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
+	quit = False
+	while not quit:
+		queryTerms = input("Enter query terms, separated by commas. Or 'quit' to exit: ")
+		queryTerms = [q for q in queryTerms.lower().split(",") if len(q) > 0]
+		quit = "quit" in queryTerms
+		if not quit:
+			print("Query: "+str(queryTerms))
+			topicalSentiment = cheetah.netAlgebraicSentimentWrapper(queryTerms, sentFolder, vectorModel, avgByHits=True)
+			print("{} net sentiment: {}".format(queryTerms,topicalSentiment))
 
 def printLogo():
 	logoPaths = [os.path.join(logoDir,logoPath) for logoPath in os.listdir(logoDir)]

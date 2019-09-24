@@ -28,6 +28,7 @@ import json
 from headline import Headline
 import traceback
 import inspect
+from datetime import datetime
 
 class QueryResult(object):
 	"""
@@ -89,7 +90,7 @@ class ResultCollection(object):
 
 		return success
 
-	def GetMinMaxDt(self):
+	def MyMinMaxDt(self):
 		# Given a list of ResultCollection's, returns the min/max headline datetimes for auto-scaling results.
 		minDt = datetime.max
 		maxDt = datetime.min
@@ -109,7 +110,7 @@ class ResultCollection(object):
 		minDt = datetime.max
 		maxDt = datetime.min
 		for resultCollection in resultCollections:
-			rcMinDt, rcMaxDt = resultCollection.GetMinMaxDt()
+			rcMinDt, rcMaxDt = resultCollection.MyMinMaxDt()
 			if rcMinDt < minDt:
 				minDt = rcMinDt
 			if rcMaxDt > maxDt:
