@@ -167,7 +167,7 @@ def analysis3(model, headlines, sentLex):
 
 			headline.Attrib["cheetah"] = sumSimilarity
 			if i % 10 == 9:
-				print("Sim: {:.3f}, object {} of {}".format(sumSimilarity, i, len(headlines)))
+				print("\rSim: {:.3f}, object {} of {}      ".format(sumSimilarity, i, len(headlines)), end="")
 	except:
 		traceback.print_exc()
 

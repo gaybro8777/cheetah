@@ -18,6 +18,7 @@ from datetime import datetime
 from common import cheetah
 from common import cheetah_present
 from result_collection import ResultCollection
+from data_transformer import DataTransformer
 from zipfile import ZipFile
 from util.fasttext_downloader import FastTextDownloader
 
@@ -52,8 +53,9 @@ def unzipReproData(reproFname="cheetah_repro.zip"):
 	If the output folder already exists, the unzip is aborted to prevent overwriting.
 	@reproFname: The output folder to which dataset will be unzipped
 	"""
-	zipPaths = [fname for fname in listFiles(reproDir, ".zip") if reproFname in fname]
-	if not zipPaths:
+	zipPaths = [os.path.join(reproDir,fname) for fname in listFiles(reproDir, ".zip") if reproFname in fname]
+	if zipPaths:
+		print("HERE")
 		zipPath = zipPaths[0]
 		outputFolder = reproFname.replace(".zip","")
 		odir = os.path.join(dataDir, outputFolder)
@@ -85,7 +87,7 @@ def selectFromFileList(flist, prompt="File list"):
 
 def selectDataFile(jsonDir):
 	# Select a file by name in some directory
-	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path]
+	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path and "unfiltered" not in path]
 	jsonPath = selectFromFileList(jsonPaths, prompt="Select a json dataset: ")
 	return os.path.join(jsonDir,jsonPath)
 
@@ -126,6 +128,10 @@ def cheetahAnalysis():
 	sentFolder=os.path.join(lexicaDir, "sentiment/BingLiu/")
 	#TODO: get these from the result collection?
 	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
+	topicCrossFilter = True
+	removeOffTopicTerms = True
+	uniquify = True
+	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
 	cheetah_present.cheetahSentimentAnalysis(resultCollections, sentFolder, vectorModel, dtLow.date(), dtHigh.date(), dtGrouping="weekly", resultFolder=resultDir, useScoreWeight=False, useSoftMatch=False)
 
 def modelAnalysis():

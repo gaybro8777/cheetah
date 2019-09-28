@@ -208,7 +208,6 @@ class ResultCollection(object):
 		with open(jsonPath,"r") as jsonFile:
 			dictList = json.load(jsonFile)
 			for d in dictList:
-				print(str(d))
 				collection = ResultCollection(name=d["Name"])
 				for qrDict in d["QueryResults"]:
 					topics = qrDict["Topics"]
