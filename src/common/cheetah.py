@@ -124,9 +124,9 @@ def cossimLexiconGenerator(model, queryTerms):
 
 def analysis3(model, headlines, sentLex):
 	print("Analysis 3...")
+	sentLex.Positives = [pw for pw in sentLex.Positives if pw in model.wv]
+	sentLex.Negatives = [nw for nw in sentLex.Negatives if nw in model.wv]
 	positives, negatives = sentLex.getBalancedSets()
-	positives = [pw for pw in positives if pw in model.wv]
-	negatives = [nw for nw in negatives if nw in model.wv]
 	print("After balancing/filtering, lexicon contains {} positives, {} negatives".format(len(positives), len(negatives)))
 
 	posNorms = dict() #pre-compute lexicon norms

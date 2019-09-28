@@ -41,6 +41,7 @@ def printLicense():
 def listFiles(dirPath, extension="", verbose=True):
 	# Lists files in DirPath by name, with optional extension filter.
 	fList = [fname for fname in os.listdir(dirPath) if fname.endswith(extension)]
+	fList = sorted(fList)
 	if verbose:
 		print("Found {} files in {} with {} extension:".format(len(fList), dirPath, extension))
 		print("  ".join(["{}. {}\n".format(i,fname) for i, fname in enumerate(fList)]))
@@ -87,7 +88,7 @@ def selectFromFileList(flist, prompt="File list"):
 
 def selectDataFile(jsonDir):
 	# Select a file by name in some directory
-	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path and "unfiltered" not in path]
+	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path ]
 	jsonPath = selectFromFileList(jsonPaths, prompt="Select a json dataset: ")
 	return os.path.join(jsonDir,jsonPath)
 

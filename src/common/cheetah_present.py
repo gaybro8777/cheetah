@@ -45,7 +45,6 @@ def getColor(topics, colors, index):
 
 	return color
 
-
 #assumes @headlines has already been analyzed by cheetah, with scores stored in @headline.cheetah
 #Returns a single list of sum-scores for each time bin, along with the corresponding list of bin indices/names
 def getCheetahScores(headlines, dtLow, dtHigh, dtGrouping, useScoreWeight, useSoftMatch, cheetahKey="cheetah"):
@@ -117,6 +116,9 @@ Cheetah analysis
 def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, dtHigh, dtGrouping="weekly", resultFolder=None, useScoreWeight=False, useSoftMatch=False):
 	#Topic terms are removed from sentiment lexica in GetNetPPmiSentimentScores..()
 	lexicon = cheetah.SentimentLexicon(sentimentFolder)
+	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+
 
 	#analyze all the headlines; the values are stored in headline.Attrib["cheetah"]
 	for result in resultCollections[0].QueryResults:
