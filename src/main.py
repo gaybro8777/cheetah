@@ -126,14 +126,24 @@ def cheetahAnalysis():
 		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
 		return
 	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
-	sentFolder=os.path.join(lexicaDir, "sentiment/BingLiu/")
+	sentFolder=os.path.join(lexicaDir, "sentiment/my_gensim/")
 	#TODO: get these from the result collection?
 	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
 	topicCrossFilter = True
 	removeOffTopicTerms = True
 	uniquify = True
 	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
-	cheetah_present.cheetahSentimentAnalysis(resultCollections, sentFolder, vectorModel, dtLow.date(), dtHigh.date(), dtGrouping="weekly", resultFolder=resultDir, useScoreWeight=False, useSoftMatch=False)
+	cheetah_present.cheetahSentimentAnalysis( \
+		resultCollections, \
+		sentFolder, \
+		vectorModel, \
+		dtLow.date(), \
+		dtHigh.date(), \
+		dtGrouping="weekly", \
+		resultFolder=resultDir, \
+		useScoreWeight=False, \
+		useSoftMatch=False,
+		normalizeScores=False)
 
 def modelAnalysis():
 	"""

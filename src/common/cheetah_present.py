@@ -47,7 +47,7 @@ def getColor(topics, colors, index):
 
 #assumes @headlines has already been analyzed by cheetah, with scores stored in @headline.cheetah
 #Returns a single list of sum-scores for each time bin, along with the corresponding list of bin indices/names
-def getCheetahScores(headlines, dtLow, dtHigh, dtGrouping, useScoreWeight, useSoftMatch, cheetahKey="cheetah"):
+def getCheetahScores(headlines, dtLow, dtHigh, dtGrouping, normalizeScores, cheetahKey="cheetah"):
 	#single dim list
 	netScores = []
 	#plot weekly sentiment
@@ -57,6 +57,8 @@ def getCheetahScores(headlines, dtLow, dtHigh, dtGrouping, useScoreWeight, useSo
 	for timeBin in timeBins:
 		binKeys.append(timeBin[0])
 		netScore = sum([headline.Attrib[cheetahKey] for headline in timeBin[1]])
+		if normalizeScores and len(timeBin[1]): # average score over headline count, instead or raw
+			netScore /= float(len(timeBin[1]))
 		netScores.append(netScore)
 
 	return netScores, binKeys
@@ -68,7 +70,7 @@ def plotCheetahHistogram(resultCollection, asDensity=False, numBins=150, savePat
 	@asDensity: If true, each plot will be normed, such that its integral is 1.0
 	"""
 
-	#get the max/min value to determine the range of the histogram
+	#get the max/min value to determine the range of the histogram over 
 	maxValue = -100000000000
 	minValue =  100000000000
 	for result in resultCollection.QueryResults:
@@ -83,6 +85,9 @@ def plotCheetahHistogram(resultCollection, asDensity=False, numBins=150, savePat
 	for result in resultCollection.QueryResults:
 		sents = [headline.Attrib[cheetahKey] for headline in result.Headlines]
 		plt.hist(sents, numBins, (minValue, maxValue), alpha=0.5, density=asDensity)
+		if len(sents) > 0:
+			avgSent = float(sum(sents)) / float(len(sents))
+			plt.axvline(avgSent, color='k', linestyle='dashed', linewidth=1)
 		topics.append(result.Topics[0])
 
 	plt.title("Gross Cheetah Score 100-bin Histogram")
@@ -112,13 +117,14 @@ def plotCheetahHistogram(resultCollection, asDensity=False, numBins=150, savePat
 
 """
 Cheetah analysis
+
+@normalizeScores: If true, normalize topical scores by headline count for that topic
 """
-def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, dtHigh, dtGrouping="weekly", resultFolder=None, useScoreWeight=False, useSoftMatch=False):
+def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, dtHigh, dtGrouping="weekly", resultFolder=None, useScoreWeight=False, useSoftMatch=False, normalizeScores=True):
 	#Topic terms are removed from sentiment lexica in GetNetPPmiSentimentScores..()
 	lexicon = cheetah.SentimentLexicon(sentimentFolder)
 	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
 	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
-
 
 	#analyze all the headlines; the values are stored in headline.Attrib["cheetah"]
 	for result in resultCollections[0].QueryResults:
@@ -133,7 +139,7 @@ def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, d
 	netScores = []
 	topicLists = []
 	for result in resultCollections[0].QueryResults:
-		topicScores, binKeys = getCheetahScores(result.Headlines, dtLow, dtHigh, dtGrouping, useScoreWeight, useSoftMatch, cheetahKey="cheetah")
+		topicScores, binKeys = getCheetahScores(result.Headlines, dtLow, dtHigh, dtGrouping, normalizeScores, cheetahKey="cheetah")
 		netScores.append(topicScores)
 		topicLists.append(result.Topics)
 
