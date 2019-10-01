@@ -89,7 +89,7 @@ def selectFromFileList(flist, prompt="File list"):
 def selectDataFile(jsonDir):
 	# Select a file by name in some directory
 	jsonPaths = [path for path in listFiles(jsonDir, "json", verbose=False) if "filtered" in path ]
-	jsonPath = selectFromFileList(jsonPaths, prompt="Select a json dataset: ")
+	jsonPath = selectFromFileList(jsonPaths, prompt="Select a repro dataset: ")
 	return os.path.join(jsonDir,jsonPath)
 
 def downloadEnglishModel():
