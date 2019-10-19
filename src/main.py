@@ -17,6 +17,7 @@ import os
 from datetime import datetime
 from common import cheetah
 from common import cheetah_present
+from harvard_loader import getHeadlinesFromHarvardCsv
 from result_collection import ResultCollection
 from data_transformer import DataTransformer
 from zipfile import ZipFile
@@ -37,6 +38,9 @@ def printLicense():
 	"""
 	with open(licensePath, "r") as licenseFile:
 		print(licenseFile.read())
+
+def getTopics():
+	return input("Enter target topic terms, separated by commas: ").lower().split(",")
 
 def listFiles(dirPath, extension="", verbose=True):
 	# Lists files in DirPath by name, with optional extension filter.
@@ -115,18 +119,74 @@ def loadDataset():
 	jsonPath = selectDataFile(cheetahDir)
 	return ResultCollection.LoadCollections(jsonPath)
 
+def harvardAnalysis():
+	csvPath = dataDir+"stories_election_web.csv"
+	if not os.path.isfile(csvPath):
+		print("Csv path not found: {}".format(csvPath))
+		print("First download harvard stories_election_web.csv data and place it or a link of the same name in the data/ folder.")
+		return
+	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
+	if not os.path.exists(modelPath):
+		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
+		return
+	#get topic terms from the user (multiple lists)
+	#topics = getTopics()
+
+
+	#get date range: dtLow, dtHigh
+	#load multiple results
+	#for topicList in topicLists:
+	#load the first topic's headlines
+
+	trumpTopics = ["trump", "trumps", "donald", "donalds"]
+	clintonTopics = ["hillary", "hillarys", "clinton", "clintons"]
+	topicLists = [trumpTopics, clintonTopics]
+	year = 2016
+
+	headlines = getHeadlinesFromHarvardCsv(csvPath, year, topicLists[0])
+	resultCollection = ResultCollection.FromResult(headlines, topicLists[0], "harvard")
+	#load the rest
+	for topicTerms in topicLists[1:]:
+		headlines = getHeadlinesFromHarvardCsv(csvPath, year, topicTerms)
+		resultCollection.AddResult(topicTerms, headlines)
+
+	print("Result collection contains:")
+	for result in resultCollection.QueryResults:
+		print("{} headlines on {}".format(len(result.Headlines), result.Topics))
+	resultCollections = [resultCollection]
+	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
+	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
+	topicCrossFilter = True
+	removeOffTopicTerms = True
+	uniquify = False
+	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
+	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
+
+	cheetah_present.cheetahSentimentAnalysis( \
+		resultCollections, \
+		sentFolder, \
+		vectorModel, \
+		dtLow.date(), \
+		dtHigh.date(), \
+		dtGrouping="weekly", \
+		resultFolder=resultDir, \
+		useScoreWeight=False, \
+		useSoftMatch=False,
+		normalizeScores=False)
+
+
 def cheetahAnalysis():
 	"""
 	-Select and load a dataset
 	-Run cheetah, outputting to results/ folder
 	"""
 	resultCollections = loadDataset()
-	modelPath=os.path.join(modelDir, "english/cc.en.300.vec")
+	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
 	if not os.path.exists(modelPath):
 		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
 		return
 	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
-	sentFolder=os.path.join(lexicaDir, "sentiment/my_gensim/")
+	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
 	#TODO: get these from the result collection?
 	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
 	topicCrossFilter = True
@@ -180,6 +240,7 @@ def printIntro():
                 / /___/ __  / /___/ /___  / / / ___ |/ __  /  
                 \____/_/ /_/_____/_____/ /_/ /_/  |_/_/ /_/  
 
+
                            Never trust--only verify.
 
 
@@ -230,20 +291,22 @@ def mainMenu():
 	cmdDict = {
 		"0": downloadEnglishModel,
 		"1": cheetahAnalysis,
-		"2": modelAnalysis,
-		"3": printIntro,
-		"4": printLicense,
-		"5": exit
+		"2": harvardAnalysis,
+		"3": modelAnalysis,
+		"4": printIntro,
+		"5": printLicense,
+		"6": exit
 	}
 
 	while True:
 		print("Main menu")
 		print("\t0) Download English FastText model")
-		print("\t1) Cheetah analyis")
-		print("\t2) Model analysis")
-		print("\t3) Intro")
-		print("\t4) License info")
-		print("\t5) Exit")
+		print("\t1) Cheetah analyis--ABLE")
+		print("\t2) Cheetah analysis--Harvard Shorenstein")
+		print("\t3) Model analysis")
+		print("\t4) Intro")
+		print("\t5) License info")
+		print("\t6) Exit")
 		option = selectOption(cmdDict.keys())
 		cmd = cmdDict[option]
 		cmd()

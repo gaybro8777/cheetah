@@ -132,8 +132,6 @@ def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, d
 	#re-save data for testing
 	#print("Resaving cheetah data...")
 	#ResultCollection.SaveCollections(resultCollections, "cheetah.json")
-	#print("here")
-	#time.sleep(5)
 
 	#netScores outer-list indexed by topicIndex, inner lists indexed via binKeys
 	netScores = []

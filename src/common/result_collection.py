@@ -24,6 +24,7 @@ SourceResultCollection: a container for one source's search results
 	@TopicalResults: the QueryTopicResult objects for this source and query
 
 """
+
 import json
 from headline import Headline
 import traceback
@@ -124,6 +125,7 @@ class ResultCollection(object):
 		Doesn't belong here, but given a raw list of headlines, and topics possibly relating to those headlines, partitions @headlines list
 		of Headline objects into ResultCollections per the lists in @topicLists. In english, that means one ResultCollection for each topic-list
 		in @topicLists, each of which includes all headlines containing any terms in that topic-list.
+		Note this is for partitioning headlines via topics, not "load these headlines directly with these topics".
 		"""
 		results = []
 		for topicList in topicLists:
@@ -131,6 +133,14 @@ class ResultCollection(object):
 			result = QueryResult(topicList, hits)
 			results.append(result)
 
+		return ResultCollection(name, results)
+
+	@staticmethod
+	def FromResult(headlines, topics, name):
+		"""
+		Directly loads a set of @headlines corresponding with @topics--no filtering, grouping, or partitioning.
+		"""
+		results = [QueryResult(topics, headlines)]
 		return ResultCollection(name, results)
 
 	"""
