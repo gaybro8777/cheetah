@@ -119,20 +119,54 @@ def loadDataset():
 	jsonPath = selectDataFile(cheetahDir)
 	return ResultCollection.LoadCollections(jsonPath)
 
-def harvardAnalysis():
-	csvPath = dataDir+"stories_election_web.csv"
-	if not os.path.isfile(csvPath):
-		print("Csv path not found: {}".format(csvPath))
-		print("First download harvard stories_election_web.csv data and place it or a link of the same name in the data/ folder.")
-		return
+def runCheetah(resultCollections):
+	topicLists = [result.Topics for collection in resultCollections for result in collection.QueryResults]
+	print("Topic lists: "+str(topicLists))
 	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
 	if not os.path.exists(modelPath):
 		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
 		return
+	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
+	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
+	topicCrossFilter = True
+	removeOffTopicTerms = True
+	uniquify = False
+	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
+	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
+
+	stopPath = os.path.join(lexicaDir, "stop/stopwords.txt")
+	stopLex = cheetah.Lexicon(stopPath)
+	stopLex.Words = DataTransformer.TextNormalizeTerms(stopLex.Words, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	DataTransformer.RemoveStopWords(resultCollections, stopLex.Words)
+
+	lexicon = cheetah.SentimentLexicon(sentFolder)
+	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	for topics in topicLists:
+		lexicon.removeTerms(topics)
+
+	cheetah_present.cheetahSentimentAnalysis( \
+		resultCollections, \
+		lexicon, \
+		vectorModel, \
+		dtLow.date(), \
+		dtHigh.date(), \
+		dtGrouping="weekly", \
+		resultFolder=resultDir, \
+		useScoreWeight=False, \
+		useSoftMatch=False,
+		normalizeScores=False)
+
+def harvardAnalysis():
+	csvPath = dataDir+"stories_election_web_test.csv"
+	if not os.path.isfile(csvPath):
+		print("Csv path not found: {}".format(csvPath))
+		print("First download harvard stories_election_web.csv data and place it or a link of the same name in the data/ folder.")
+		return
+
+	#TODO: manual user input, organization partitioning
 	#get topic terms from the user (multiple lists)
 	#topics = getTopics()
-
-
 	#get date range: dtLow, dtHigh
 	#load multiple results
 	#for topicList in topicLists:
@@ -153,57 +187,16 @@ def harvardAnalysis():
 	print("Result collection contains:")
 	for result in resultCollection.QueryResults:
 		print("{} headlines on {}".format(len(result.Headlines), result.Topics))
-	resultCollections = [resultCollection]
-	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
-	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
-	topicCrossFilter = True
-	removeOffTopicTerms = True
-	uniquify = False
-	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
-	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
 
-	cheetah_present.cheetahSentimentAnalysis( \
-		resultCollections, \
-		sentFolder, \
-		vectorModel, \
-		dtLow.date(), \
-		dtHigh.date(), \
-		dtGrouping="weekly", \
-		resultFolder=resultDir, \
-		useScoreWeight=False, \
-		useSoftMatch=False,
-		normalizeScores=False)
+	runCheetah([resultCollection])
 
 
-def cheetahAnalysis():
+def cheetahAbleAnalysis():
 	"""
 	-Select and load a dataset
 	-Run cheetah, outputting to results/ folder
 	"""
-	resultCollections = loadDataset()
-	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
-	if not os.path.exists(modelPath):
-		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
-		return
-	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
-	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
-	#TODO: get these from the result collection?
-	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
-	topicCrossFilter = True
-	removeOffTopicTerms = True
-	uniquify = True
-	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
-	cheetah_present.cheetahSentimentAnalysis( \
-		resultCollections, \
-		sentFolder, \
-		vectorModel, \
-		dtLow.date(), \
-		dtHigh.date(), \
-		dtGrouping="weekly", \
-		resultFolder=resultDir, \
-		useScoreWeight=False, \
-		useSoftMatch=False,
-		normalizeScores=False)
+	runCheetah(loadDataset())
 
 def modelAnalysis():
 	"""
@@ -290,7 +283,7 @@ def mainMenu():
 
 	cmdDict = {
 		"0": downloadEnglishModel,
-		"1": cheetahAnalysis,
+		"1": cheetahAbleAnalysis,
 		"2": harvardAnalysis,
 		"3": modelAnalysis,
 		"4": printIntro,

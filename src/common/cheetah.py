@@ -31,7 +31,7 @@ can in fasttext). But it also sounds like bullshit: if vectors (models) can be l
 def loadFastTextModel(modelPath):
 	#for .vec models only; see header comment
 	if modelPath.endswith(".vec"):
-		print("Loading fasttext model from {}... this can take up to fifteen minutes...".format(modelPath))
+		print("Loading fasttext model from {}... this can take several seconds to a few minutes...".format(modelPath))
 		#model = gensim.models.wrappers.FastText.load_word2vec_format(modelPath, limit=100000)
 		model = gensim.models.KeyedVectors.load_word2vec_format(modelPath, limit=100000)
 		return FastTextModelWrapper(model)
@@ -102,6 +102,22 @@ def netAlgebraicSentiment(queryTerms, sentLex, model, avgByHits=True):
 	# Kludgiest normalization ever...
 	return posSim / posHits - negSim / negHits
 
+def buildVectorCache(terms, vecModel):
+	"""
+	@terms: some terms to cache, e.g. ones we will repeatedly calculate/lookup like signal/sentiment terms
+	@vecModel: A word2vec model with a .wv attribute 
+	Builds and returns a dictionary mapping term strings to vector 2-ples. The first member of the tuple is
+	the term's vector, and the second member is its norm. Caching these is more efficient
+	for lookups and also since norms are repeatedly calculated for the same terms otherwise.
+	"""
+	# maps term keys to vector 2-ples as: term -> (termVec, termNorm)
+	cache = dict() #pre-compute term vector norms and store vectors for faster lookups
+	for term in terms:
+		vec = vecModel.wv[term]
+		vecNorm = np.linalg.norm(vec)
+		cache[term] = (vec, vecNorm)
+	return cache
+
 def netAlgebraicSentimentWrapper(queryTerms, sentimentFolder, model, avgByHits=True):
 	sentLex = SentimentLexicon(sentFolder=sentimentFolder)
 	return netAlgebraicSentiment(queryTerms, sentLex, model, avgByHits)
@@ -126,15 +142,15 @@ def analysis3(model, headlines, sentLex):
 	print("Analysis 3...")
 	sentLex.Positives = [pw for pw in sentLex.Positives if pw in model.wv]
 	sentLex.Negatives = [nw for nw in sentLex.Negatives if nw in model.wv]
-	positives, negatives = sentLex.getBalancedSets()
-	print("After balancing/filtering, lexicon contains {} positives, {} negatives".format(len(positives), len(negatives)))
+	# Re-balance after filtering through model lexicon
+	sentLex.getBalancedSets()
+	print("After balancing/filtering, lexicon contains {} positives, {} negatives".format(len(sentLex.Positives), len(sentLex.Negatives)))
 
-	posNorms = dict() #pre-compute lexicon norms
-	for posTerm in positives:
-		posNorms[posTerm] = np.linalg.norm( model.wv[posTerm] )
-	negNorms = dict() #pre-compute lexicon norms
-	for negTerm in negatives:
-		negNorms[negTerm] = np.linalg.norm( model.wv[negTerm] )
+	# maps term keys to vector 2-ples as: term -> (termVec, termNorm)
+	posCache = buildVectorCache(sentLex.Positives, model)
+	negCache = buildVectorCache(sentLex.Negatives, model)
+	posCache = list(posCache.values())#[:2000] #take only the values, since we no longer need string mappings; after this point these are 'bags of vectors'
+	negCache = list(negCache.values())#[:2000]
 
 	worstScore = 0.0
 	bestScore = 0.0
@@ -154,19 +170,15 @@ def analysis3(model, headlines, sentLex):
 			if n > 0.0:
 				avgVec /= n
 				avgVecNorm = np.linalg.norm(avgVec)
-				#add all positive terms to sum-similarity...
-				for posTerm in positives:
-					posVec = model.wv[posTerm]
-					posNorm = posNorms[posTerm]
-					sumSimilarity += avgVec.dot(posVec.T) / (posNorm * avgVecNorm)
-				#...and subtract all negative terms
-				for negTerm in negatives:
-					negVec = model.wv[negTerm]
-					negNorm = negNorms[negTerm]
-					sumSimilarity -= avgVec.dot(negVec.T) / (negNorm * avgVecNorm)
+				#add all positive term vectors to sum-similarity...
+				for posVec, posNorm in posCache:
+					sumSimilarity += (avgVec.dot(posVec.T) / (posNorm * avgVecNorm))
+				#...and subtract all negative term vectors
+				for negVec, negNorm in negCache:
+					sumSimilarity -= (avgVec.dot(negVec.T) / (negNorm * avgVecNorm))
 
 			headline.Attrib["cheetah"] = sumSimilarity
-			if i % 10 == 9:
+			if i % 50 == 49:
 				print("\rSim: {:.3f}, document {} of {}      ".format(sumSimilarity, i, len(headlines)), end="")
 	except:
 		traceback.print_exc()

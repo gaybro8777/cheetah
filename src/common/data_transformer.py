@@ -152,6 +152,17 @@ class DataTransformer(object):
 		return uriDict
 
 	"""
+	Removes stop words from headlines in passed result collections.
+	"""
+	@staticmethod
+	def RemoveStopWords(resultCollections, stopWords):
+		for resultCollection in resultCollections:
+			for queryResult in resultCollection.QueryResults:
+				for headline in queryResult.Headlines:
+					headline.StripTerms(stopWords)
+		return resultCollections
+
+	"""
 	Removes off-topic topic terms from all of the text for a headline on a specific topic. Hence if headline H1 is about
 	topic T1, but contains some topic terms from T2, then these terms are removed. This is a criticizable filter, but the intuition is that
 	a headline about T1 and its language distribution identifies T1, not any opposiing topics that may also be in the text.

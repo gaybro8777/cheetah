@@ -118,13 +118,23 @@ def plotCheetahHistogram(resultCollection, asDensity=False, numBins=150, savePat
 """
 Cheetah analysis
 
+Remember to filter lexicon of topic/target terms. For example 'trump' is both a topic term and often a positive lexicon term.
+
 @normalizeScores: If true, normalize topical scores by headline count for that topic
 """
-def cheetahSentimentAnalysis(resultCollections, sentimentFolder, model, dtLow, dtHigh, dtGrouping="weekly", resultFolder=None, useScoreWeight=False, useSoftMatch=False, normalizeScores=True):
-	#Topic terms are removed from sentiment lexica in GetNetPPmiSentimentScores..()
-	lexicon = cheetah.SentimentLexicon(sentimentFolder)
-	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
-	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+def cheetahSentimentAnalysis(\
+		resultCollections,\
+		lexicon,\
+		model,\
+		dtLow,\
+		dtHigh,\
+		dtGrouping="weekly",\
+		resultFolder=None,\
+		useScoreWeight=False,\
+		useSoftMatch=False,\
+		normalizeScores=True):
+
+	print("Running cheetah sentiment analysis. Remember to filter input lexicon of topic/target terms to prevent ambiguity, e.g. 'trump'=positive term and topic term.")
 
 	#analyze all the headlines; the values are stored in headline.Attrib["cheetah"]
 	for result in resultCollections[0].QueryResults:
