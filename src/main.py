@@ -238,15 +238,14 @@ def printIntro():
 
 
 Welcome to Cheetah, a cousin of the ABLE-ITEM deep web content extractor and Sentinel analysis
-engine, by Jesse Waite. I am an American NLP developer and informatic security researcher
-specializing in the use of machine/deep learning for counter-misinformation. Don't believe me?
-I wouldn't either. That's why I'm publishing this tool to provide live-demos of open source
-multi-language misinformation analysis methods. Also some other (and perhaps funner)
-grand-nlp stuff too. This basic interface is just for algorithmic/dataset repro purposes.
+engine. I am an American NLP developer and informatic security researcher specializing in the 
+use of nlp and deep learning for counter-misinformation. The purpose of this tool is to provide
+live-demos of open source multi-language misinformation analysis methods. Also some other (and
+perhaps funner) nlp stuff too. This basic interface is primarily for algorithmic/dataset repro purposes.
 
 
 To execute cheetah repro, begin by downloading the fasttext english '.text' model (option 0).
-Then run Cheetah analysis (option 1).
+Then run Cheetah analysis (options 1 and 2).
 """
 	"""
 Upcoming analyses:
