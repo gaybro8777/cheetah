@@ -1,3 +1,8 @@
+If you need full datasets, custom signal lexica, or more advanced code feel free to contact me.
+
+	linkedin.com/ --> jesse waite
+	nice_yeti@protonmail
+
 Datasets are available on request.
 
 I have full digital content datasets available for most major online news platforms, and can acquired additional ones on request. A few
@@ -8,7 +13,7 @@ Some data contains full language info, such as full article text. It depends on 
 the same format of title + description (~150 words usually). Engagement data includes only facebook share counts, but other academic datasets are available
 for share-regression tasks (Shorenstein Center data for example).
 
-All content data is derived from openly available archive api's and social media api's, and is protected by fair use for research/criticism purposes.
+All content data is derived from openly available archive api's and social media api's, and is protected by fair-use for research/criticism purposes.
 
 100+ available full-content datasets for national, local, and foreign orgs:
 	-novayagazeta 2013-2018
@@ -27,10 +32,5 @@ All content data is derived from openly available archive api's and social media
 
 All datasets are 2-32GB in size, much too large to post on most sites.
 
-All are available free of charge to formal researchers under fair-use.
-
-If you need full datasets, custom signal lexica, or more advanced code feel free to contact me:
-	linkedin.com/ -> search jesse waite
-	jdwaite@wsu.edu
-	nice_yeti@protonmail
+All available free of charge to formal researchers under fair-use.
 

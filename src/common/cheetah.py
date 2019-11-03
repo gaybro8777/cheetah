@@ -138,6 +138,29 @@ def cossimLexiconGenerator(model, queryTerms):
 
 	return rankedTerms
 
+def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
+	avgVec[:] = 0.0
+	n = 0.0
+	sumSimilarity = 0.0
+	#average all words in doc into a single vector
+	for word in headline.GetFullText().split():
+		if word in model.wv.vocab:
+			avgVec += model.wv[word]
+			n += 1.0
+	if n > 0.0:
+		avgVec /= n
+		avgVecNorm = np.linalg.norm(avgVec)
+		#TODO: I believe the multiplication by avgVecNorm in both sums factors out of both sums, and instead just multiply final sum by 1/avgVecNorm
+		#add all positive term vectors to sum-similarity...
+		for posVec, posNorm in posCache:
+			sumSimilarity += (avgVec.dot(posVec.T) / (posNorm * avgVecNorm))
+		#...and subtract all negative term vectors
+		for negVec, negNorm in negCache:
+			sumSimilarity -= (avgVec.dot(negVec.T) / (negNorm * avgVecNorm))
+
+	headline.Attrib["cheetah"] = sumSimilarity
+	return sumSimilarity
+
 def analysis3(model, headlines, sentLex):
 	print("Analysis 3...")
 	sentLex.Positives = [pw for pw in sentLex.Positives if pw in model.wv]
@@ -151,33 +174,11 @@ def analysis3(model, headlines, sentLex):
 	negCache = buildVectorCache(sentLex.Negatives, model)
 	posCache = list(posCache.values())#[:2000] #take only the values, since we no longer need string mappings; after this point these are 'bags of vectors'
 	negCache = list(negCache.values())#[:2000]
-
-	worstScore = 0.0
-	bestScore = 0.0
-	worstHeadline = 0.0
-	bestHeadline = 0.0
 	avgVec = np.zeros(model.vector_size)
+
 	try:
 		for i, headline in enumerate(headlines):
-			avgVec[:] = 0.0
-			n = 0.0
-			sumSimilarity = 0.0
-			#average all words in doc into a single vector
-			for word in headline.GetFullText().split():
-				if word in model.wv.vocab:
-					avgVec += model.wv[word]
-					n += 1.0
-			if n > 0.0:
-				avgVec /= n
-				avgVecNorm = np.linalg.norm(avgVec)
-				#add all positive term vectors to sum-similarity...
-				for posVec, posNorm in posCache:
-					sumSimilarity += (avgVec.dot(posVec.T) / (posNorm * avgVecNorm))
-				#...and subtract all negative term vectors
-				for negVec, negNorm in negCache:
-					sumSimilarity -= (avgVec.dot(negVec.T) / (negNorm * avgVecNorm))
-
-			headline.Attrib["cheetah"] = sumSimilarity
+			sumSimilarity = cheetifyHeadline(headline, avgVec, posCache, negCache, model)
 			if i % 50 == 49:
 				print("\rSim: {:.3f}, document {} of {}      ".format(sumSimilarity, i, len(headlines)), end="")
 	except:
