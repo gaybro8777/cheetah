@@ -161,8 +161,7 @@ def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 	headline.Attrib["cheetah"] = sumSimilarity
 	return sumSimilarity
 
-def analysis3(model, headlines, sentLex):
-	print("Analysis 3...")
+def getCacheParams(model, sentLex):
 	sentLex.Positives = [pw for pw in sentLex.Positives if pw in model.wv]
 	sentLex.Negatives = [nw for nw in sentLex.Negatives if nw in model.wv]
 	# Re-balance after filtering through model lexicon
@@ -176,6 +175,11 @@ def analysis3(model, headlines, sentLex):
 	negCache = list(negCache.values())#[:2000]
 	avgVec = np.zeros(model.vector_size)
 
+	return sentLex, posCache, negCache, avgVec
+
+def analysis3(model, headlines, sentLex):
+	print("Analysis 3...")
+	sentLex, posCache, negCache, avgVec = getCacheParams(model, sentLex)
 	try:
 		for i, headline in enumerate(headlines):
 			sumSimilarity = cheetifyHeadline(headline, avgVec, posCache, negCache, model)

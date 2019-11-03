@@ -1,4 +1,5 @@
 import csv
+import os
 import sys
 import traceback
 
@@ -6,11 +7,11 @@ import traceback
 Iterator for csv data.
 See Pandas before reusing this--they may have better interfaces for transforming csv data.
 """
-class CsvRecordGenerator:
+class CsvRecordGenerator(object):
 	def __init__(self, csvPath, delimiter=',', encoding="utf-8"):
 		self._csvFile = open(csvPath,"r")
-		self._csvReader = csv.DictReader(self._csvFile, delimiter=delimiter)
-		self.fieldnames = self._csvReader.fieldnames
+		self._csvReader = csv.reader(self._csvFile, delimiter=delimiter)
+		self.fieldnames = next(self._csvReader)
 
 	def __iter__(self):
 		i = 0
@@ -38,21 +39,21 @@ def transformCsv(csvPath, recTransformFunc, headerTransformFunc, opath, delimite
 	if opath == csvPath:
 		print("ERROR: input cannot be output: {} {}".format(csvPath, opath))
 		return
-	if path.exists(opath):
+	if os.path.exists(opath):
 		print("ERROR: output path already exists. Move or delete it before running: {}".format(opath))
 		return
 
 	try:
-		print("Transforming {} and outputting to {}...".format(csvath, opath))
+		print("Transforming {} and outputting to {}...".format(csvPath, opath))
 		reader = CsvRecordGenerator(csvPath, delimiter=delimiter)
 		with open(opath, "w+") as outputFile:
-			writer = csv.DictWriter(ouptutFile, delimiter=delimiter)
+			writer = csv.writer(outputFile, delimiter=delimiter)
 			# Copy the header out, with new fields using @headerTransformFunc
-			outputFields = headerTransformFunc(reader.fieldnames)
-			writer.write(outputFields)
+			fieldnames = headerTransformFunc(reader.fieldnames)
+			writer.writerow(fieldnames)
 			for rec in reader:
-				outputRec = transformFunc(rec)
-				outputCsv.write(outputRec)
+				outputRec = recTransformFunc(rec)
+				writer.writerow(outputRec)
 			print("Transform completed")
 	except:
 		traceback.print_exc()

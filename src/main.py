@@ -14,6 +14,7 @@ sys.path.append('./common')
 sys.path.append('./util')
 
 import os
+import harvard_persist
 from datetime import datetime
 from common import cheetah
 from common import cheetah_present
@@ -119,14 +120,29 @@ def loadDataset():
 	jsonPath = selectDataFile(cheetahDir)
 	return ResultCollection.LoadCollections(jsonPath)
 
-def runCheetah(resultCollections):
-	topicLists = [result.Topics for collection in resultCollections for result in collection.QueryResults]
-	print("Topic lists: "+str(topicLists))
+def loadStopWordLexicon():
+	stopPath = os.path.join(lexicaDir, "stop/stopwords.txt")
+	stopLex = cheetah.Lexicon(stopPath)
+	stopLex.Words = DataTransformer.TextNormalizeTerms(stopLex.Words, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	return stopLex
+
+def loadSentimentLexicon(sentFolder):
+	lexicon = cheetah.SentimentLexicon(sentFolder)
+	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	return lexicon
+
+def loadFastTextModel():
 	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
 	if not os.path.exists(modelPath):
 		print("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
 		return
-	vectorModel = cheetah.loadFastTextModel(modelPath=modelPath)
+	return cheetah.loadFastTextModel(modelPath=modelPath)
+
+def runCheetah(resultCollections):
+	topicLists = [result.Topics for collection in resultCollections for result in collection.QueryResults]
+	print("Topic lists: "+str(topicLists))
+	vectorModel = loadFastTextModel()
 	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
 	topicCrossFilter = True
 	removeOffTopicTerms = True
@@ -134,14 +150,10 @@ def runCheetah(resultCollections):
 	dtLow, dtHigh = ResultCollection.GetMinMaxDt(resultCollections)
 	DataTransformer.PrimaryResultCollectionFilter(resultCollections, dtLow.date(), dtHigh.date(), topicCrossFilter, removeOffTopicTerms, uniquify)
 
-	stopPath = os.path.join(lexicaDir, "stop/stopwords.txt")
-	stopLex = cheetah.Lexicon(stopPath)
-	stopLex.Words = DataTransformer.TextNormalizeTerms(stopLex.Words, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	stopLex = loadStopWordLexicon()
 	DataTransformer.RemoveStopWords(resultCollections, stopLex.Words)
 
-	lexicon = cheetah.SentimentLexicon(sentFolder)
-	lexicon.Positives = DataTransformer.TextNormalizeTerms(lexicon.Positives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
-	lexicon.Negatives = DataTransformer.TextNormalizeTerms(lexicon.Negatives, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+	lexicon = loadSentimentLexicon(sentFolder)
 	for topics in topicLists:
 		lexicon.removeTerms(topics)
 
@@ -156,6 +168,26 @@ def runCheetah(resultCollections):
 		useScoreWeight=False, \
 		useSoftMatch=False,
 		normalizeScores=False)
+
+def harvardAnalyzeAndPersist():
+	opath = dataDir+"stories_election_web_cheetofied.csv"
+	csvPath = dataDir+"stories_election_web_test.csv"
+
+	if os.path.isfile(opath):
+		print("Output path already exists, and must be moved or deleted before running: {}".format(opath))
+		return	
+	if not os.path.isfile(csvPath):
+		print("Csv path not found: {}".format(csvPath))
+		print("First download harvard {} data and place it or a link of the same name in {} folder.".format(csvPath, dataDir))
+		return
+	print("Running cheetah on harvard data and persisting to {}".format(opath))
+
+	model = loadFastTextModel()
+	sentFolder = os.path.join(lexicaDir, "sentiment/my_gensim/")
+	sentLex = loadSentimentLexicon(sentFolder)
+	stopLex = loadStopWordLexicon()
+	csvTransformer = harvard_persist.HarvardCsvCheetahVisitor(model, sentLex, stopLex)
+	csvTransformer.cheetifyHarvardCsv(csvPath, opath)
 
 def harvardAnalysis():
 	csvPath = dataDir+"stories_election_web_test.csv"
@@ -189,7 +221,6 @@ def harvardAnalysis():
 		print("{} headlines on {}".format(len(result.Headlines), result.Topics))
 
 	runCheetah([resultCollection])
-
 
 def cheetahAbleAnalysis():
 	"""
@@ -284,10 +315,11 @@ def mainMenu():
 		"0": downloadEnglishModel,
 		"1": cheetahAbleAnalysis,
 		"2": harvardAnalysis,
-		"3": modelAnalysis,
-		"4": printIntro,
-		"5": printLicense,
-		"6": exit
+		"3": harvardAnalyzeAndPersist,
+		"4": modelAnalysis,
+		"5": printIntro,
+		"6": printLicense,
+		"7": exit
 	}
 
 	while True:
@@ -295,10 +327,11 @@ def mainMenu():
 		print("\t0) Download English FastText model")
 		print("\t1) Cheetah analyis--ABLE")
 		print("\t2) Cheetah analysis--Harvard Shorenstein")
-		print("\t3) Model analysis")
-		print("\t4) Intro")
-		print("\t5) License info")
-		print("\t6) Exit")
+		print("\t3) Analyze and persist Harvard data with cheetah (Warning: 48h+ runtime!)")
+		print("\t4) Model analysis")
+		print("\t5) Intro")
+		print("\t6) License info")
+		print("\t7) Exit")
 		option = selectOption(cmdDict.keys())
 		cmd = cmdDict[option]
 		cmd()
