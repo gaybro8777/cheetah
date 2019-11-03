@@ -17,8 +17,8 @@ class CsvRecordGenerator(object):
 		i = 0
 		for record in self._csvReader:
 			i+=1
-			if i % 10000 == 9999:
-				print("\r{} records processed    ".format(i), end="")
+			if i % 100 == 99:
+				print("\r{} records processed     ".format(i), end="")
 				sys.stdout.flush()
 			yield record
 		self._csvFile.close()

@@ -22,6 +22,7 @@ class HarvardCsvCheetahVisitor(object):
 		self._sentLex, self._posCache, self._negCache, self._avgVec = cheetah.getCacheParams(model, sentLex)
 		self._stopLex = stopLex
 		self._model = model
+		self._misses = 0
 
 	def _harvardRecordToHeadline(self, record):
 		#print("DEBUG: ", record, type(record))
@@ -55,6 +56,7 @@ class HarvardCsvCheetahVisitor(object):
 			inputRec.append(sumSimilarity)
 		else:
 			inputRec.append(math.nan)
+			self._misses += 1
 
 		return inputRec
 
@@ -70,6 +72,7 @@ class HarvardCsvCheetahVisitor(object):
 		so they can be persisted and analyzed offline without re-running cheetah.
 		NOTE: This will take up to 48 hours to run...
 		"""
+		self._misses = 0
 		csv_transformer.transformCsv(csvPath, self._transformRecord, self._transformHeader, opath, delimiter=',')
 	
 
