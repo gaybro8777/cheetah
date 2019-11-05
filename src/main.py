@@ -171,7 +171,7 @@ def runCheetah(resultCollections):
 
 def harvardAnalyzeAndPersist():
 	opath = dataDir+"stories_election_web_cheetofied.csv"
-	csvPath = dataDir+"stories_election_web_test.csv"
+	csvPath = dataDir+"stories_election_web.csv"
 
 	if os.path.isfile(opath):
 		print("Output path already exists, and must be moved or deleted before running: {}".format(opath))
@@ -190,7 +190,7 @@ def harvardAnalyzeAndPersist():
 	csvTransformer.cheetifyHarvardCsv(csvPath, opath)
 
 def harvardAnalysis():
-	csvPath = dataDir+"stories_election_web_test.csv"
+	csvPath = dataDir+"stories_election_web.csv"
 	if not os.path.isfile(csvPath):
 		print("Csv path not found: {}".format(csvPath))
 		print("First download harvard stories_election_web.csv data and place it or a link of the same name in the data/ folder.")
