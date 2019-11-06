@@ -51,9 +51,19 @@ def transformCsv(csvPath, recTransformFunc, headerTransformFunc, opath, delimite
 			# Copy the header out, with new fields using @headerTransformFunc
 			fieldnames = headerTransformFunc(reader.fieldnames)
 			writer.writerow(fieldnames)
+			outputCache = []
 			for rec in reader:
 				outputRec = recTransformFunc(rec)
-				writer.writerow(outputRec)
+				outputCache.append(outputRec)
+				if len(outputCache) > 1000:
+					writer.writerows(outputCache)
+					outputCache = []
+        
+			# write final cache content
+			if len(outputCache) > 0:
+				writer.writerows(outputCache)
+				outputCache = []
+        
 			print("Transform completed")
 	except:
 		traceback.print_exc()
