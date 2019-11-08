@@ -174,7 +174,6 @@ def harvardAnalyzeAndPersist():
 	csvPath = dataDir+"stories_election_web.csv"
 	#opath = dataDir+"test.csv"
 	#csvPath = dataDir+"test_out.csv"
-
 	print("TODO: Test and retry without factoring avgVecNorm in cheetah to ensure the same result for the same input.")
 
 	if os.path.isfile(opath):
@@ -193,6 +192,15 @@ def harvardAnalyzeAndPersist():
 	sentLex = loadSentimentLexicon(sentFolder)
 	stopLex = loadStopWordLexicon()
 	csvTransformer = harvard_persist.HarvardCsvCheetahVisitor(model, sentLex, stopLex)
+	#TODO: spawn multiple threads for sections of the data; this will speed up cheetah computation on large datasets and multicore systems.
+	# 1) Split input file into n temp files
+	# 2) Spawn a thread for each file: pass the temp file and the output path/lock
+	# 3) In each thread: process each file, grab output file loc, and write out
+	# 4) Alternatively, pass output work back to main thread: have each thread write to its own temp output file, 
+	# then increment a signal; when incremented, the main thread outputs results to a single file and cleans up temp files. Or something similar.
+	
+
+
 	csvTransformer.cheetifyHarvardCsv(csvPath, opath)
 
 def harvardAnalysis():
