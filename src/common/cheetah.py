@@ -150,13 +150,16 @@ def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 	if n > 0.0:
 		avgVec /= n
 		avgVecNorm = np.linalg.norm(avgVec)
-		#TODO: I believe the multiplication by avgVecNorm in both sums factors out of both sums, and instead just multiply final sum by 1/avgVecNorm
 		#add all positive term vectors to sum-similarity...
 		for posVec, posNorm in posCache:
-			sumSimilarity += (avgVec.dot(posVec.T) / (posNorm * avgVecNorm))
+			sumSimilarity += (avgVec.dot(posVec.T) / posNorm)
 		#...and subtract all negative term vectors
 		for negVec, negNorm in negCache:
-			sumSimilarity -= (avgVec.dot(negVec.T) / (negNorm * avgVecNorm))
+			sumSimilarity -= (avgVec.dot(negVec.T) / negNorm)
+		# Divide the sum-similarity by average vector norm.
+		# This is an optimization, since the cosine-similarity in the above terms would have this in every denominator above, e.g. (avgVec.dot(posVec.T) / posNorm * avgVecNorm).
+		# But since it is in every term of the sums above, it factors out.
+		sumSimilarity /= avgVecNorm
 
 	headline.Attrib["cheetah"] = sumSimilarity
 	return sumSimilarity
