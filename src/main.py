@@ -173,9 +173,13 @@ def harvardAnalyzeAndPersist():
 	opath = dataDir+"stories_election_web_cheetofied.csv"
 	csvPath = dataDir+"stories_election_web_test.csv"
 
+	print("TODO: Test and retry without factoring avgVecNorm in cheetah to ensure the same result for the same input.")
+
 	if os.path.isfile(opath):
 		print("Output path already exists, and must be moved or deleted before running: {}".format(opath))
-		return	
+		if input("Remove existing file? Enter y or n: ").lower() not in ["yes","y"]:
+			return
+		os.remove(opath)
 	if not os.path.isfile(csvPath):
 		print("Csv path not found: {}".format(csvPath))
 		print("First download harvard {} data and place it or a link of the same name in {} folder.".format(csvPath, dataDir))

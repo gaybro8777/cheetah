@@ -23,6 +23,7 @@ class HarvardCsvCheetahVisitor(object):
 		self._stopLex = stopLex
 		self._model = model
 		self._misses = 0
+		self._recCount = 0
 
 	def _harvardRecordToHeadline(self, record):
 		#print("DEBUG: ", record, type(record))
@@ -47,6 +48,7 @@ class HarvardCsvCheetahVisitor(object):
 		@inputRec: An input csv record
 		@inputTransformer: Function for transforming @inputRec into an output csv record
 		"""
+		self._recCount += 1
 		headline = self._harvardRecordToHeadline(inputRec)
 		if headline is not None:
 			#drop stop words from headline
@@ -57,6 +59,8 @@ class HarvardCsvCheetahVisitor(object):
 		else:
 			inputRec.append(math.nan)
 			self._misses += 1
+			if self._misses % 100 == 99:
+				print("Misses: {}".format(self._misses))
 
 		return inputRec
 
@@ -73,6 +77,7 @@ class HarvardCsvCheetahVisitor(object):
 		NOTE: This will take up to 48 hours to run...
 		"""
 		self._misses = 0
+		self._recCount = 0
 		csv_transformer.transformCsv(csvPath, self._transformRecord, self._transformHeader, opath, delimiter=',')
 	
 
