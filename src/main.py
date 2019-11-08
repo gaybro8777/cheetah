@@ -79,7 +79,7 @@ def selectOption(validOptions, prompt="Select option: "):
 	option = input(prompt)
 	while option not in validOptions:
 		print("Invalid option. Re-enter.")
-		option = input(prompt)
+		option = input(prompt).strip()
 	return option
 
 def selectFromFileList(flist, prompt="File list"):
@@ -172,6 +172,8 @@ def runCheetah(resultCollections):
 def harvardAnalyzeAndPersist():
 	opath = dataDir+"stories_election_web_cheetofied.csv"
 	csvPath = dataDir+"stories_election_web.csv"
+	#opath = dataDir+"test.csv"
+	#csvPath = dataDir+"test_out.csv"
 
 	if os.path.isfile(opath):
 		print("Output path already exists, and must be moved or deleted before running: {}".format(opath))
@@ -242,7 +244,7 @@ def modelAnalysis():
 	quit = False
 	while not quit:
 		queryTerms = input("Enter query terms, separated by commas. Or 'quit' to exit: ")
-		queryTerms = [q for q in queryTerms.lower().split(",") if len(q) > 0]
+		queryTerms = [q.strip() for q in queryTerms.lower().split(",") if len(q.strip()) > 0]
 		quit = "quit" in queryTerms
 		if not quit:
 			print("Query: "+str(queryTerms))
