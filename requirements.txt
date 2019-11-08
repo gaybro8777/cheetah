@@ -2,3 +2,5 @@ gensim==3.8.0
 Unidecode==1.1.1
 matplotlib==3.0.3
 numpy==1.17.0
+lxml
+bs4

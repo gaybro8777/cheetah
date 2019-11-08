@@ -9,7 +9,7 @@ See Pandas before reusing this--they may have better interfaces for transforming
 """
 class CsvRecordGenerator(object):
 	def __init__(self, csvPath, delimiter=',', encoding="utf-8"):
-		self._csvFile = open(csvPath,"r")
+		self._csvFile = open(csvPath,"r", encoding=encoding)
 		self._csvReader = csv.reader(self._csvFile, delimiter=delimiter)
 		self.fieldnames = next(self._csvReader)
 
@@ -34,7 +34,7 @@ a new csv file to an output path; with minimal in-memory data.
 
 Csv header is required.
 """
-def transformCsv(csvPath, recTransformFunc, headerTransformFunc, opath, delimiter=','):
+def transformCsv(csvPath, recTransformFunc, headerTransformFunc, opath, delimiter=',', encoding="utf-8"):
 	# IO checks
 	if opath == csvPath:
 		print("ERROR: input cannot be output: {} {}".format(csvPath, opath))
@@ -46,14 +46,24 @@ def transformCsv(csvPath, recTransformFunc, headerTransformFunc, opath, delimite
 	try:
 		print("Transforming {} and outputting to {}...".format(csvPath, opath))
 		reader = CsvRecordGenerator(csvPath, delimiter=delimiter)
-		with open(opath, "w+") as outputFile:
+		with open(opath, "w+", encoding=encoding) as outputFile:
 			writer = csv.writer(outputFile, delimiter=delimiter)
 			# Copy the header out, with new fields using @headerTransformFunc
 			fieldnames = headerTransformFunc(reader.fieldnames)
 			writer.writerow(fieldnames)
+			outputCache = []
 			for rec in reader:
 				outputRec = recTransformFunc(rec)
-				writer.writerow(outputRec)
+				outputCache.append(outputRec)
+				if len(outputCache) > 1000:
+					writer.writerows(outputCache)
+					outputCache = []
+        
+			# write final cache content
+			if len(outputCache) > 0:
+				writer.writerows(outputCache)
+				outputCache = []
+        
 			print("Transform completed")
 	except:
 		traceback.print_exc()
