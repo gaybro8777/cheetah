@@ -10,11 +10,16 @@ import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def convertPublishDate(df):
+	df['publish_date'] = pd.to_datetime(df['publish_date'], infer_datetime_format=True)
+	return df
+
 def loadData():
 	#TODO: only read columns of interest. This reads tons on unused data.
 	dataPath = "../../data/stories_election_web_cheetofied_test.csv"
 	print("Loading dataset from "+dataPath)
-	return pd.read_csv(dataPath, header=0)
+	df = pd.read_csv(dataPath, header=0)
+	return df
 
 df = loadData()
 # Filter by org
@@ -34,12 +39,15 @@ t2 = df[ df['title'].str.contains(topic, case=False) ]
 t1 = t1[ t1['cheetah'].notnull() ]
 t2 = t2[ t2['cheetah'].notnull() ]
 
-
 print(t1)
 print(type(t1))
 t1.hist(column="cheetah")
 t2.hist(column="cheetah")
 plt.show()
+
+#Awesome time series resource: https://towardsdatascience.com/basic-time-series-manipulation-with-pandas-4432afee64ea
+t1 = convertPublishDate(t1)
+t2 = convertPublishDate(t2)
 
 
 
