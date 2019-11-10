@@ -16,7 +16,11 @@ def queryTopic(df, topics):
 	@df: The stories_election_csv data frame
 	@topics: Topic terms by which to filter on 'title'.
 	"""
-	return df[ df['title'].str.contains("|".join(topics), case=False) ]
+	pattern = "|".join(topics)
+	#print("PATTERN: ",pattern)
+	tf = df[ df['title'].str.contains(pattern, case=False, regex=True) ]
+	print("Got {} records on topic query {}".format(tf.size, topics))
+	return tf
 
 def convertPublishDate(df):
 	# converts publish_date string values in format "2015-12-28 07:00:00" to datetime objects
@@ -25,7 +29,7 @@ def convertPublishDate(df):
 
 def loadData():
 	#TODO: only read columns of interest. This reads tons on unused data.
-	dataPath = "../../data/stories_election_web_cheetofied_test.csv"
+	dataPath = "../../data/stories_election_web_cheetofied.csv"
 	print("Loading dataset from "+dataPath)
 	df = pd.read_csv(dataPath, header=0)
 	return df
@@ -37,16 +41,32 @@ def filterByDateTimeRange(df, minDt, maxDt):
 def groupByWeekYear(df):
 	return df.groupby(pd.Grouper(key='publish_date', freq="W-MON"))
 
-def sumAndPlotCheetahValues(grp):
+def sumAndPlotCheetahValues(grp, label=None, spanAvg=None):
+	"""
+	@grp: the dt-grouped content
+	@label: A legend label for this group (e.g. the topic)
+	@spanAvg: If not None, then avg binned values by this span. E.g., if span=2, then average over adjacent weeks.
+	"""
+
 	summed = grp['cheetah'].sum()
-	print("SUMMED: ", summed)
-	summed.plot()
+	#print("SUMMED: ", summed)
+	if summed.size > 0:
+		if label is not None and len(label) > 0:
+			if spanAvg is not None and spanAvg > 1:
+				summed = summed.ewm(span=spanAvg).mean()
+			ax = summed.plot(label=label)
+			ax.legend(loc=3)
+		else:
+			summed.plot()
+	else:
+		print("Error, sum contains no data")
 
 def filterCheetahNans(df):
 	# Missing cheetah values (e.g. not headline/language data) are stored as NaN. This filters them.
 	return df[ df['cheetah'].notnull() ]
 
 def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt):
+	spanAvg = 2
 	# Plot topical cheetah values as time series
 	#@df: NOTE: Must have publish_date values converted to datetime before calling!
 	for topicList in topicLists:
@@ -54,7 +74,9 @@ def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt):
 		tf = queryTopic(df, topicList)
 		tf = filterCheetahNans(tf)
 		grp = groupByWeekYear(tf)
-		s = sumAndPlotCheetahValues(grp)
+		s = sumAndPlotCheetahValues(grp, label=topicList[0], spanAvg=spanAvg) #plot 2-week average
+	
+	plt.title("Cheetah{}".format(" {}-week average".format(spanAvg) if spanAvg > 1 else "" ))
 	plt.show()
 
 def filterBySource(df, urls):
@@ -84,7 +106,7 @@ def getSourceUrls(df):
 def getTopics(prompt="Enter comma-separated terms on a topic: "):
 	valid = False
 	while not valid:
-		topics = [topic.strip() for topic in input(prompt).split() if len(topic.strip()) > 0] 
+		topics = [topic.strip() for topic in input(prompt).split(",") if len(topic.strip()) > 0] 
 		valid = len(topics) > 0
 		if not valid:
 			print("Empty list. Re-enter topics.")
