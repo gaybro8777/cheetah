@@ -10,6 +10,7 @@ import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 def queryTopic(df, topics):
 	"""
 	@df: The stories_election_csv data frame
@@ -24,7 +25,7 @@ def convertPublishDate(df):
 
 def loadData():
 	#TODO: only read columns of interest. This reads tons on unused data.
-	dataPath = "../../data/stories_election_web_cheetofied.csv"
+	dataPath = "../../data/stories_election_web_cheetofied_test.csv"
 	print("Loading dataset from "+dataPath)
 	df = pd.read_csv(dataPath, header=0)
 	return df
@@ -60,17 +61,62 @@ def filterBySource(df, urls):
 	print("Getting by source per urls: ", urls)
 	return df[ df['media_url'].str.contains("|".join(urls), case=False) ]
 
-# load harvard data
-df = loadData()
-# filter by org
-df = filterBySource(df, ["cnn.com"])
-# get topics, group by week, and plot aggregate cheetah values by week
-topicLists = [["clinton","hillary"], ["trump","donald"] ]
-minDt = datetime.datetime(year=2015, month=1, day=1)
-maxDt = datetime.datetime(year=2016, month=12, day=31)
-df = convertPublishDate(df)
-plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+def getSourceUrls(df):
+	valid = False
+	while not valid:
+		urls = [url.strip() for url in input("Enter urls separated by commas, to match org media_url fields by substring: ").split(",") if len(url.strip()) > 0]
+		if len(urls) == 0:
+			print("Empty list. Re-enter urls.")
+		else:
+			hits = df[ df['media_url'].str.contains("|".join(urls), case=False) ]['media_url'].values.tolist()
+			# uniquify hits
+			hits = list(set(hits))
+			print("{} matching urls in data:  {}".format(len(hits), "|".join(set(hits))))
+			valid = len(hits) > 0
+			if not valid:
+				print("No hits. Re-enter urls.")
 
+	return urls
+
+def getTopics(prompt="Enter comma-separated terms on a topic: "):
+	valid = False
+	while not valid:
+		topics = [topic.strip() for topic in input(prompt).split() if len(topic.strip()) > 0] 
+		valid = len(topics) > 0
+		if not valid:
+			print("Empty list. Re-enter topics.")
+	return topics
+
+def getTopicLists():
+	done = False
+	topicLists = []
+	while not done:
+		topics = getTopics("Enter comma-separated terms on a topic, or 'done' to exit: ")
+		if len(topics) == 1 and topics[0] == "done":
+			done = len(topicLists) > 0
+			if not done:
+				print("Error: no topics entered. Re-enter.")
+		else:
+			topicLists.append(topics)
+
+	return topicLists
+
+# load harvard data
+harvardDf = loadData()
+harvardDf = convertPublishDate(harvardDf)
+
+done = False
+while not done:
+	# filter by source/organization via the media_url field
+	urls = getSourceUrls(harvardDf)
+	df = filterBySource(harvardDf, urls)
+	# get multiple topic sets to plot
+	topicLists = getTopicLists()
+	# get topics, group by week, and plot aggregate cheetah values by week
+	minDt = datetime.datetime(year=2015, month=1, day=1)
+	maxDt = datetime.datetime(year=2016, month=12, day=31)
+	plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+	done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
 
 
 
