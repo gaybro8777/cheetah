@@ -68,10 +68,13 @@ def getSourceUrls(df):
 		if len(urls) == 0:
 			print("Empty list. Re-enter urls.")
 		else:
-			hits = df[ df['media_url'].str.contains("|".join(urls), case=False) ]['media_url'].values.tolist()
+			urlSeries = df[ df['media_url'].str.contains("|".join(urls), case=False) ]['media_url']
+			hitCount = urlSeries.size
+			hits = urlSeries.values.tolist()
 			# uniquify hits
 			hits = list(set(hits))
-			print("{} matching urls in data:  {}".format(len(hits), "|".join(set(hits))))
+			print("{} matching urls in data {}".format(len(hits), ",".join(set(hits))))
+			print("{} org hits (records)".format(hitCount))
 			valid = len(hits) > 0
 			if not valid:
 				print("No hits. Re-enter urls.")
