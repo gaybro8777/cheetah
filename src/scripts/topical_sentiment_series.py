@@ -18,7 +18,7 @@ def queryTopic(df, topics):
 	"""
 	pattern = "|".join(topics)
 	#print("PATTERN: ",pattern)
-	tf = df[ df['title'].str.contains(pattern, case=False, regex=True) ]
+	tf = df[ df['title'].str.contains(pattern, case=False, regex=True, na=False) ]
 	print("Got {} records on topic query {}".format(tf.size, topics))
 	return tf
 
@@ -32,7 +32,7 @@ def loadData():
 	dataPath = "../../data/stories_election_web_cheetofied.csv"
 	print("Loading dataset from "+dataPath)
 	df = pd.read_csv(dataPath, header=0)
-	return df
+	return convertPublishDate(df)
 
 def filterByDateTimeRange(df, minDt, maxDt):
 	return df[ (df['publish_date'] >= minDt) & (df['publish_date'] <= maxDt) ]
@@ -67,8 +67,8 @@ def filterCheetahNans(df):
 
 def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt):
 	spanAvg = 2
-	# Plot topical cheetah values as time series
-	#@df: NOTE: Must have publish_date values converted to datetime before calling!
+	# Plot topical cheetah values as time series, for multiple time series on a single plot
+	#@df: A source-filtered df derived from the harvard data frame. NOTE: Must have publish_date values converted to datetime before calling!
 	for topicList in topicLists:
 		df = filterByDateTimeRange(df, minDt, maxDt)
 		tf = queryTopic(df, topicList)
@@ -79,9 +79,41 @@ def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt):
 	plt.title("Cheetah{}".format(" {}-week average".format(spanAvg) if spanAvg > 1 else "" ))
 	plt.show()
 
+def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
+	# Plot topical cheetah values as histograms. One plot, multiple histograms, one for each topic.
+	#@df: A source-filtered df derived from the harvard df. NOTE: Must have publish_date values converted to datetime before calling!
+
+	# plot basic, unweighted cheetah histogram
+	bins = 200
+	for topicList in topicLists:
+		df = filterByDateTimeRange(df, minDt, maxDt)
+		tf = queryTopic(df, topicList)
+		tf = filterCheetahNans(tf)
+		series = tf["cheetah"]
+		series.hist(bins=bins, grid=True)
+	
+	plt.title("Cheetah histogram")
+	plt.show()
+
+	# plot weighted histogram, by one of the social network
+	bins = 200
+	fb_column = "facebook_share_count"
+	bitly_column = "bitly_click_count"
+	tweet_column = "normalized_tweet_count" # Not sure how this column is defined. There is also a "simple_tweet_count".
+	share_column = tweet_column
+	for topicList in topicLists:
+		df = filterByDateTimeRange(df, minDt, maxDt)
+		tf = queryTopic(df, topicList)
+		tf = filterCheetahNans(tf)
+		series = tf["cheetah"]
+		series.hist(bins=bins, grid=True, weights=tf[share_column])
+	
+	plt.title("Cheetah histogram, weighted by "+share_column) 
+	plt.show()
+
 def filterBySource(df, urls):
 	print("Getting by source per urls: ", urls)
-	return df[ df['media_url'].str.contains("|".join(urls), case=False) ]
+	return df[ df['media_url'].str.contains("|".join(urls), case=False, na=False) ]
 
 def getSourceUrls(df):
 	valid = False
@@ -126,22 +158,34 @@ def getTopicLists():
 
 	return topicLists
 
-# load harvard data
-harvardDf = loadData()
-harvardDf = convertPublishDate(harvardDf)
+def seriesMunging():
+	# load harvard data
+	harvardDf = loadData()
 
-done = False
-while not done:
-	# filter by source/organization via the media_url field
-	urls = getSourceUrls(harvardDf)
-	df = filterBySource(harvardDf, urls)
-	# get multiple topic sets to plot
-	topicLists = getTopicLists()
-	# get topics, group by week, and plot aggregate cheetah values by week
-	minDt = datetime.datetime(year=2015, month=1, day=1)
-	maxDt = datetime.datetime(year=2016, month=12, day=31)
-	plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
-	done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
+	done = False
+	while not done:
+		# filter by source/organization via the media_url field
+		urls = getSourceUrls(harvardDf)
+		df = filterBySource(harvardDf, urls)
+		# get multiple topic sets to plot
+		topicLists = getTopicLists()
+		# get topics, group by week, and plot aggregate cheetah values by week
+		minDt = datetime.datetime(year=2015, month=1, day=1)
+		maxDt = datetime.datetime(year=2016, month=12, day=31)
+		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+		plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
+		done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
+
+#seriesMunging()
+topicLists = [["trump", "donald"], ["clinton", "hillary"]]
+df = loadData()
+#df = filterCheetahNans(df)
+minDt = datetime.datetime(year=2015, month=1, day=1)
+maxDt = datetime.datetime(year=2016, month=12, day=31)
+
+plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
+
+#seriesMunging()
 
 
 
