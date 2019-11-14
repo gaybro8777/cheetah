@@ -5,6 +5,7 @@ same as the linux split command, but using python for platform independence.
 """
 import os
 import math
+import gzip
 
 """
 Just a wrapper around FileSplitter to gzip and split a large file into chunks, then reassemble
@@ -13,18 +14,37 @@ and gunzip on the outro.
 class GzSplitter(object):
 	def __init__(self):
 		self._splitter = FileSplitter()
-	def Split(self, ifile):
-		#gzip ifile to tempfile
-		#call splitter
-	def Unsplit(self, ofile):
-		#call unsplitter
-		#gunzip the file
+
+	def _gzipFile(self, bigFile, opath):
+		with open(bigFile) as src, gzip.open(opath, "wb") as dst:        
+			dst.writelines(src)
+
+	def Split(self, bigFile, outputFolder, chunkMb=25):
+		destPath = bigFile+".gz"
+		self._gzipFile(bigFile, destPath)
+		self._splitter.Split(destPath, chunkMb, outputFolder)
+
+	def Unsplit(self, inputFolder, bigOutputFile):
+		gzPath = bigOutputFile+".gz"
+		self._splitter.Unsplit(inputFolder, gzPath)
+		with open(bitOutputFile, "w+") as ofile:
+			with gzip.open(gzPath, 'rb') as gzFile:
+				ofile.write(gzPath.read())
 
 class FileSplitter(object):
 	def __init__(self):
 		pass
 
 	def Split(self, inputFile, chunkMb, outputFolder):
+		"""
+		@inputFile: The input file to split into chunks of size @chunkMb
+		@chunkMb: The size of the output file. The last file will be smaller.
+		@outputFolder: An output location. Must be empty.
+		"""
+
+		if os.path.isdir(outputFolder) and len(os.listdir(outputFolder)) > 0:
+			print("ERROR: output folder is not empty. Empty it before calling.")
+			return -1
 		if not os.path.isfile(inputFile):
 			print("ERROR: no such file "+inputFile)
 			return -1
@@ -33,8 +53,12 @@ class FileSplitter(object):
 			print("ERROR chunkMb must be between 1MB and 1000MB.")
 			return -1
 
+		if not os.path.isdir(outputFolder):
+			os.mkdir(outputFolder)
+
 		print("Splitting input file {} into chunks of size {}MB".format(inputFile, chunkMb))
 		with open(inputFile, "rb") as ifile:
+			i = 0
 			while True:
 				bytesRead = ifile.read(chunkMb)
 				if not bytesRead:
@@ -43,6 +67,7 @@ class FileSplitter(object):
 				print("Writing {} bytes to {}".format(len(bytesRead), ofname))
 				with open(ofname, "wb+") as ofile:
 					ofile.write(bytesRead)
+				i+=1
 		print("Done.")
 
 	def Unsplit(self, inputFolder, outputFile, sanityChecking=True):
@@ -50,11 +75,25 @@ class FileSplitter(object):
 			print("ERROR output path {} already exists. Move or delete existing file before running".format(outputFile))
 			return
 
+		inputFiles = [os.path.join(inputFolder, fname) for fname in sorted(os.listdir(inputFolder))]
+		if len(inputFiles) == 0:
+			print("ERROR: input files empty.")
+			return
+
 		print("Unsplitting files in {} and outputting to {}".format(inputFolder, outputFile))
 
 		with open(outputFile, "wb+") as ofile:
-			inputFiles = os.listdir(inputFolder)
 			for fname in inputFiles:
-				fname = os.path.join(inputFolder, fname)
 				with open(fname, "rb") as ifile:
 					ofile.write(ifile.read())
+
+def main():
+	bigFile = "test.csv"
+	outputFolder = "test/"
+	gzSplitter = GzSplitter()
+	gzSplitter.Split(bigFile, 25, outputFolder):
+	gzSplitter.Unsplit(outputFolder, "test_result.csv")
+
+if __name__ == "__main__":
+	main()
+
