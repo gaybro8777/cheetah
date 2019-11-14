@@ -16,18 +16,21 @@ class GzSplitter(object):
 		self._splitter = FileSplitter()
 
 	def _gzipFile(self, bigFile, opath):
-		with open(bigFile) as src, gzip.open(opath, "wb") as dst:        
-			dst.writelines(src)
+		print("Gzipping file {} to {}".format(bigFile, opath))
+		with open(bigFile, "rb") as src:
+			with gzip.open(opath, "wb+") as dst:        
+				dst.write(src.read())
+		print("Done.")
 
 	def Split(self, bigFile, outputFolder, chunkMb=25):
 		destPath = bigFile+".gz"
 		self._gzipFile(bigFile, destPath)
-		self._splitter.Split(destPath, chunkMb, outputFolder)
+		self._splitter.Split(destPath, outputFolder, chunkMb)
 
 	def Unsplit(self, inputFolder, bigOutputFile):
 		gzPath = bigOutputFile+".gz"
 		self._splitter.Unsplit(inputFolder, gzPath)
-		with open(bitOutputFile, "w+") as ofile:
+		with open(bigOutputFile, "w+") as ofile:
 			with gzip.open(gzPath, 'rb') as gzFile:
 				ofile.write(gzPath.read())
 
@@ -35,7 +38,7 @@ class FileSplitter(object):
 	def __init__(self):
 		pass
 
-	def Split(self, inputFile, chunkMb, outputFolder):
+	def Split(self, inputFile, outputFolder, chunkMb=25):
 		"""
 		@inputFile: The input file to split into chunks of size @chunkMb
 		@chunkMb: The size of the output file. The last file will be smaller.
@@ -60,7 +63,7 @@ class FileSplitter(object):
 		with open(inputFile, "rb") as ifile:
 			i = 0
 			while True:
-				bytesRead = ifile.read(chunkMb)
+				bytesRead = ifile.read(chunkMb * 1000000)
 				if not bytesRead:
 					break
 				ofname = str(i).zfill(8)
@@ -91,7 +94,7 @@ def main():
 	bigFile = "test.csv"
 	outputFolder = "test/"
 	gzSplitter = GzSplitter()
-	gzSplitter.Split(bigFile, 25, outputFolder):
+	gzSplitter.Split(bigFile, outputFolder, 25)
 	gzSplitter.Unsplit(outputFolder, "test_result.csv")
 
 if __name__ == "__main__":
