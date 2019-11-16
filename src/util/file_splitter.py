@@ -16,23 +16,57 @@ class GzSplitter(object):
 		self._splitter = FileSplitter()
 
 	def _gzipFile(self, bigFile, opath):
-		print("Gzipping file {} to {}".format(bigFile, opath))
-		with open(bigFile, "rb") as src:
-			with gzip.open(opath, "wb+") as dst:        
-				dst.write(src.read())
-		print("Done.")
+		if os.path.isfile(opath):
+			print("ERROR: output file already exists {}".format(opath))
+			return -1
+		if not os.path.isfile(bigFile):
+			print("ERROR: input file already exists {}".format(bigFile))
+			return -1
+
+		result = -1
+		try:
+			print("Gzipping file {} to {}".format(bigFile, opath))
+			with open(bigFile, "rb") as src:
+				with gzip.open(opath, "wb+") as dst:        
+					dst.write(src.read())
+			print("Done.")
+			result = 1
+		except:
+			traceback.print_exc()
+		return result
 
 	def Split(self, bigFile, outputFolder, chunkMb=25):
+		if not os.path.isdir(outputFolder):
+			print("ERROR: output folder does not exist.")
+			return -1
+
 		destPath = bigFile+".gz"
-		self._gzipFile(bigFile, destPath)
-		self._splitter.Split(destPath, outputFolder, chunkMb)
+		result = self._gzipFile(bigFile, destPath)
+		if result > 0:
+			result = self._splitter.Split(destPath, outputFolder, chunkMb)
+		return result
 
 	def Unsplit(self, inputFolder, bigOutputFile):
+		if not os.path.isdir(inputFolder):
+			print("ERROR: input folder does not exist.")
+			return -1
+
+		if os.path.isfile(bigOutputFile):
+			print("ERROR: output file already exists {}".format(bigOutputFile))
+			return -1
+
+		result = -1
 		gzPath = bigOutputFile+".gz"
-		self._splitter.Unsplit(inputFolder, gzPath)
-		with open(bigOutputFile, "w+") as ofile:
-			with gzip.open(gzPath, 'rb') as gzFile:
-				ofile.write(gzPath.read())
+		if self._splitter.Unsplit(inputFolder, gzPath) > 0:
+			try:
+				with open(bigOutputFile, "wb+") as ofile:
+					with gzip.open(gzPath, 'rb') as gzFile:
+						ofile.write(gzFile.read())
+				result = 1
+			except:
+				traceback.print_exc()
+
+		return result
 
 class FileSplitter(object):
 	def __init__(self):
@@ -59,42 +93,55 @@ class FileSplitter(object):
 		if not os.path.isdir(outputFolder):
 			os.mkdir(outputFolder)
 
-		print("Splitting input file {} into chunks of size {}MB".format(inputFile, chunkMb))
-		with open(inputFile, "rb") as ifile:
-			i = 0
-			while True:
-				bytesRead = ifile.read(chunkMb * 1000000)
-				if not bytesRead:
-					break
-				ofname = str(i).zfill(8)
-				print("Writing {} bytes to {}".format(len(bytesRead), ofname))
-				with open(ofname, "wb+") as ofile:
-					ofile.write(bytesRead)
-				i+=1
-		print("Done.")
+		result = -1
+		try:
+			print("Splitting input file {} into chunks of size {}MB in {}".format(inputFile, chunkMb, outputFolder))
+			with open(inputFile, "rb") as ifile:
+				i = 0
+				while True:
+					bytesRead = ifile.read(chunkMb * 1000000)
+					if not bytesRead:
+						break
+					ofname = os.path.join(outputFolder, str(i).zfill(8))
+					print("Writing {} bytes to {}".format(len(bytesRead), ofname))
+					with open(ofname, "wb+") as ofile:
+						ofile.write(bytesRead)
+					i+=1
+			print("Done.")
+			result = 1
+		except:
+			traceback.print_exc()
+		return result
 
 	def Unsplit(self, inputFolder, outputFile, sanityChecking=True):
 		if sanityChecking and os.path.isfile(outputFile):
 			print("ERROR output path {} already exists. Move or delete existing file before running".format(outputFile))
-			return
+			return -1
 
 		inputFiles = [os.path.join(inputFolder, fname) for fname in sorted(os.listdir(inputFolder))]
 		if len(inputFiles) == 0:
 			print("ERROR: input files empty.")
-			return
+			return -1
 
 		print("Unsplitting files in {} and outputting to {}".format(inputFolder, outputFile))
 
-		with open(outputFile, "wb+") as ofile:
-			for fname in inputFiles:
-				with open(fname, "rb") as ifile:
-					ofile.write(ifile.read())
+		result = -1
+		try:
+			with open(outputFile, "wb+") as ofile:
+				for fname in inputFiles:
+					with open(fname, "rb") as ifile:
+						ofile.write(ifile.read())
+			result = 1
+		except:
+			traceback.print_exc()
+		return result
+
 
 def main():
 	bigFile = "test.csv"
 	outputFolder = "test/"
 	gzSplitter = GzSplitter()
-	gzSplitter.Split(bigFile, outputFolder, 25)
+	#gzSplitter.Split(bigFile, outputFolder, 25)
 	gzSplitter.Unsplit(outputFolder, "test_result.csv")
 
 if __name__ == "__main__":
