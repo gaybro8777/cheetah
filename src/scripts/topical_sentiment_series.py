@@ -60,22 +60,32 @@ def sumAndPlotCheetahValues(grp, label=None, spanAvg=None):
 	else:
 		print("Error, sum contains no data")
 
+def weightCheetahScoresByShares(df, shareCol="facebook_share_count"): #harvard data only has fb shares; other share columns are all zero or bad data.
+	df["cheetah"] = df["cheetah"] * df[shareCol]
+	return df
+
 def filterCheetahNans(df):
 	# Missing cheetah values (e.g. not headline/language data) are stored as NaN. This filters them.
 	return df[ df['cheetah'].notnull() ]
 
-def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt):
+def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=False):
 	spanAvg = 2
+	shareCol = "facebook_share_count"
 	# Plot topical cheetah values as time series, for multiple time series on a single plot
 	#@df: A source-filtered df derived from the harvard data frame. NOTE: Must have publish_date values converted to datetime before calling!
 	for topicList in topicLists:
-		df = filterByDateTimeRange(df, minDt, maxDt)
-		tf = queryTopic(df, topicList)
+		dtf = filterByDateTimeRange(df, minDt, maxDt)
+		tf = queryTopic(dtf, topicList)
 		tf = filterCheetahNans(tf)
+		if weightByShares:
+			tf = weightCheetahScoresByShares(tf, shareCol)
 		grp = groupByWeekYear(tf)
 		s = sumAndPlotCheetahValues(grp, label=topicList[0], spanAvg=spanAvg) #plot 2-week average
-	
-	plt.title("Cheetah{}".format(" {}-week average".format(spanAvg) if spanAvg > 1 else "" ))
+
+	title = "Cheetah{}".format(" {}-week average".format(spanAvg) if spanAvg > 1 else "")
+	if weightByShares:
+		title += ", weighted by {}".format(shareCol)
+	plt.title(title)
 	plt.show()
 
 def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
@@ -89,8 +99,9 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		tf = queryTopic(df, topicList)
 		tf = filterCheetahNans(tf)
 		series = tf["cheetah"]
-		series.hist(bins=bins, grid=True)
+		series.hist(bins=bins, grid=True, label=topicList[0])
 	
+	plt.legend(loc=2)
 	plt.title("Cheetah histogram")
 	plt.show()
 
@@ -105,8 +116,9 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		tf = queryTopic(df, topicList)
 		tf = filterCheetahNans(tf)
 		series = tf["cheetah"]
-		series.hist(bins=bins, grid=True, weights=tf[share_column])
-	
+		series.hist(bins=bins, grid=True, weights=tf[share_column], label=topicList[0])
+
+	plt.legend(loc=2)	
 	plt.title("Cheetah histogram, weighted by "+share_column) 
 	plt.show()
 
@@ -172,19 +184,20 @@ def seriesMunging():
 		minDt = datetime.datetime(year=2015, month=1, day=1)
 		maxDt = datetime.datetime(year=2016, month=12, day=31)
 		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=True)
 		plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
 		done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
 
+"""
 #seriesMunging()
 topicLists = [["trump", "donald"], ["clinton", "hillary"]]
 df = loadData()
 #df = filterCheetahNans(df)
 minDt = datetime.datetime(year=2015, month=1, day=1)
 maxDt = datetime.datetime(year=2016, month=12, day=31)
-
-plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
-
-#seriesMunging()
+#plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
+"""
+seriesMunging()
 
 
 

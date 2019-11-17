@@ -200,9 +200,6 @@ def harvardAnalyzeAndPersist():
 	# 3) In each thread: process each file, grab output file loc, and write out
 	# 4) Alternatively, pass output work back to main thread: have each thread write to its own temp output file, 
 	# then increment a signal; when incremented, the main thread outputs results to a single file and cleans up temp files. Or something similar.
-	
-
-
 	csvTransformer.cheetifyHarvardCsv(csvPath, opath)
 
 def harvardAnalysis():
