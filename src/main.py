@@ -23,6 +23,8 @@ from result_collection import ResultCollection
 from data_transformer import DataTransformer
 from zipfile import ZipFile
 from util.fasttext_downloader import FastTextDownloader
+from util.file_splitter import GzSplitter
+
 
 dataDir = "../data/"
 reproDir = "../repro/"
@@ -269,6 +271,16 @@ def printLogo():
 	with open(logoPath, "r") as logoFile:
 		print(logoFile.read())
 
+def unzipHarvardData():
+	shorensteinDir = os.path.join(reproDir,"shorenstein_repro")
+	outputCsv = os.path.join(datadir, "stories_election_web_cheetofied.csv")
+	splitter = GzSplitter()
+	if splitter.Unplit(shorensteinDir, outputCsv, fsChecking=True) <= 0:
+		print("An error occurred when unsplitting/uncompressing cheetah-fied shorenstein data. See console output.")
+		return
+	else:
+		print("Cheetah-fied shorenstein 2016 web content data successfully exported to "+shorensteinDir)
+
 def printIntro():
 	desc = """
 
@@ -330,10 +342,11 @@ def mainMenu():
 		"1": cheetahAbleAnalysis,
 		"2": harvardAnalysis,
 		"3": harvardAnalyzeAndPersist,
-		"4": modelAnalysis,
-		"5": printIntro,
-		"6": printLicense,
-		"7": exit
+		"4": unzipHarvardData,
+		"5": modelAnalysis,
+		"6": printIntro,
+		"7": printLicense,
+		"8": exit
 	}
 
 	while True:
@@ -342,10 +355,11 @@ def mainMenu():
 		print("\t1) Cheetah analyis--ABLE")
 		print("\t2) Cheetah analysis--Harvard Shorenstein")
 		print("\t3) Analyze and persist Harvard data with cheetah (Warning: 48h+ runtime!)")
-		print("\t4) Model analysis")
-		print("\t5) Intro")
-		print("\t6) License info")
-		print("\t7) Exit")
+		print("\t4) Unzip Harvard data to repro folder (includes cheetah column)")
+		print("\t5) Model analysis")
+		print("\t6) Intro")
+		print("\t7) License info")
+		print("\t8) Exit")
 		option = selectOption(cmdDict.keys())
 		cmd = cmdDict[option]
 		cmd()

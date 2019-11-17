@@ -19,94 +19,14 @@ same as the linux split command, but using python for platform independence.
   The Unsplit command just does the inverse: pass it a folder of split file fragments, cat them into a single gz, and uncompress.
 
 In a professional setting, you'll want more file system checks and other error handling (e.g., no 
-naughty user paths, zip slip prevention, more basic checks).
+naughty user paths, zip slip prevention, run pylint, other basic fs checks).
 
 """
+
 import os
-import math
 import gzip
+import traceback
 import filecmp
-
-class GzSplitter(object):
-	"""
-	Just a wrapper around FileSplitter to gzip and split a large file into chunks,
-	then reassemble and gunzip on the outro.
-	"""
-	def __init__(self):
-		self._splitter = FileSplitter()
-
-	def _gzipFile(self, bigFile, opath, fsChecking=True):
-		"""
-		@bigFile: Path to some big file.
-		@opath: The output path to which @bigFile will be g-zipped, as bifFile+".gz".
-		@fsChecks: Non-essential file system checks, e.g., to prevent overwriting existing content.
-		"""
-
-		if fsChecking and os.path.isfile(opath):
-			print("ERROR: output file already exists {}".format(opath))
-			return -1
-		if not os.path.isfile(bigFile):
-			print("ERROR: input file does not exist {}".format(bigFile))
-			return -1
-
-		result = -1
-		try:
-			print("Gzipping file {} to {}".format(bigFile, opath))
-			with open(bigFile, "rb") as src:
-				with gzip.open(opath, "wb+") as dst:        
-					dst.write(src.read())
-			print("Done.")
-			result = 1
-		except:
-			traceback.print_exc()
-		return result
-
-	def Split(self, bigFile, outputFolder, chunkMb=25, fsChecking=True):
-		"""
-		@bigFile: A large, uncompressed input file.
-		@outputFolder: An output directory to which the file will be compressed to a gz and then fragmented over multiple files.
-		@chunkMb: The MB chunk size of files.
-		@fsChecking: Non-essential file system checks, e.g., to prevent overwriting existing content.
-		"""
-		if not os.path.isdir(outputFolder):
-			print("ERROR: output folder does not exist.")
-			return -1
-
-		destPath = bigFile+".gz"
-		result = self._gzipFile(bigFile, destPath, fsChecking)
-		if result > 0:
-			result = self._splitter.Split(destPath, outputFolder, chunkMb, fsChecking)
-			#remove the temp gz file
-			os.remove(destPath)
-		return result
-
-	def Unsplit(self, inputFolder, bigOutputFile, fsChecking=True):
-		"""
-		@inputFolder: An input folder containing the outputs (gz fragments) of the Split() method.
-		@bigOutputFile: The file to which the gz will be reassembled and uncompressed.
-		@fsChecking: Non-essential file system checks, e.g., to prevent overwriting existing content.
-		"""
-		if not os.path.isdir(inputFolder):
-			print("ERROR: input folder does not exist.")
-			return -1
-		if fsChecking and os.path.isfile(bigOutputFile):
-			print("ERROR: output file already exists {}".format(bigOutputFile))
-			return -1
-
-		result = -1
-		gzPath = bigOutputFile+".gz"
-		if self._splitter.Unsplit(inputFolder, gzPath, fsChecking) > 0:
-			try:
-				with open(bigOutputFile, "wb+") as ofile:
-					with gzip.open(gzPath, "rb") as gzFile:
-						ofile.write(gzFile.read())
-				#remove temp gz file
-				os.remove(gzPath)
-				result = 1
-			except:
-				traceback.print_exc()
-
-		return result
 
 class FileSplitter(object):
 	"""
@@ -186,6 +106,98 @@ class FileSplitter(object):
 			traceback.print_exc()
 		return result
 
+class GzSplitter(object):
+	"""
+	Just a wrapper around FileSplitter to gzip and split a large file into chunks,
+	then reassemble and gunzip on the outro.
+	"""
+	def __init__(self):
+		self._splitter = FileSplitter()
+
+	def _gzipFile(self, bigFile, opath, fsChecking=True):
+		"""
+		@bigFile: Path to some big file.
+		@opath: The output path to which @bigFile will be g-zipped, as bifFile+".gz".
+		@fsChecks: Non-essential file system checks, e.g., to prevent overwriting existing content.
+		"""
+
+		if fsChecking and os.path.isfile(opath):
+			print("ERROR: output file already exists {}".format(opath))
+			return -1
+		if not os.path.isfile(bigFile):
+			print("ERROR: input file does not exist {}".format(bigFile))
+			return -1
+
+		result = -1
+		try:
+			print("Gzipping file {} to {}".format(bigFile, opath))
+			with open(bigFile, "rb") as src:
+				with gzip.open(opath, "wb+") as dst:
+					while True:
+						bytes = src.read(65535)
+						if bytes == b"":
+							break
+						dst.write(bytes)
+			print("Done.")
+			result = 1
+		except:
+			traceback.print_exc()
+		return result
+
+	def Split(self, bigFile, outputFolder, chunkMb=25, fsChecking=True):
+		"""
+		@bigFile: A large, uncompressed input file.
+		@outputFolder: An output directory to which the file will be compressed to a gz and then fragmented over multiple files.
+		@chunkMb: The MB chunk size of files.
+		@fsChecking: Non-essential file system checks, e.g., to prevent overwriting existing content.
+		"""
+		if not os.path.isdir(outputFolder):
+			print("ERROR: output folder does not exist.")
+			return -1
+
+		destPath = bigFile+".gz"
+		result = self._gzipFile(bigFile, destPath, fsChecking)
+		if result > 0:
+			result = self._splitter.Split(destPath, outputFolder, chunkMb, fsChecking)
+			#remove the temp gz file
+			os.remove(destPath)
+		return result
+
+	def Unsplit(self, inputFolder, bigOutputFile, fsChecking=True):
+		"""
+		@inputFolder: An input folder containing the outputs (gz fragments) of the Split() method.
+		@bigOutputFile: The file to which the gz will be reassembled and uncompressed.
+		@fsChecking: Non-essential file system checks, e.g., to prevent overwriting existing content.
+		"""
+		if not os.path.isdir(inputFolder):
+			print("ERROR: input folder does not exist.")
+			return -1
+		if fsChecking and os.path.isfile(bigOutputFile):
+			print("ERROR: output file already exists {}".format(bigOutputFile))
+			return -1
+
+		result = -1
+		gzPath = bigOutputFile+".gz"
+		if self._splitter.Unsplit(inputFolder, gzPath, fsChecking) > 0:
+			try:
+				with open(bigOutputFile, "wb+") as ofile:
+					with gzip.open(gzPath, "rb") as gzFile:
+						while True:
+							bytes = gzFile.read(65535)
+							if bytes == b"":
+								break
+							ofile.write(bytes)
+				#remove temp gz file
+				os.remove(gzPath)
+				result = 1
+			except:
+				traceback.print_exc()
+
+		return result
+
+
+
+##################### Testing #######################################################################
 def filesEqual(path1, path2):
 	"""
 	Returns true if two files are equal in content, or both are empty:
@@ -200,7 +212,7 @@ def filesEqual(path1, path2):
 	return filecmp.cmp(path1, path2)	
 
 def selfTest():
-	print("Running self-test. Place a large (>100MB) file named test.csv in this directory as input.") 
+	print("Running self-test. Place a large (>100MB) file named test.csv in this directory as input.")
 	bigFile = "test.csv"
 	outputFile = "test_result.csv"
 	resultGzTemp = outputFile+".gz"
@@ -218,7 +230,7 @@ def selfTest():
 				result = "PASS" if filesEqual(bigFile, outputFile) else "FAIL"
 	except:
 		traceback.print_exc()
-	
+
 	print("Test result: "+result)
 
 	#clean up
@@ -232,7 +244,6 @@ def selfTest():
 		os.remove(gzTemp)
 	if os.path.isfile(resultGzTemp):
 		os.remove(resultGzTemp)
-
 
 def main():
 	selfTest()
