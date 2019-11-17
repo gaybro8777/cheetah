@@ -10,7 +10,6 @@ import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
 def queryTopic(df, topics):
 	"""
 	@df: The stories_election_csv data frame
@@ -98,9 +97,9 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 	# plot weighted histogram, by one of the social network
 	bins = 200
 	fb_column = "facebook_share_count"
-	bitly_column = "bitly_click_count"
-	tweet_column = "normalized_tweet_count" # Not sure how this column is defined. There is also a "simple_tweet_count".
-	share_column = tweet_column
+	bitly_column = "bitly_click_count" # bitly and tweet counts suck; too much missing data, or none
+	tweet_column = "normalized_tweet_count"
+	share_column = fb_column
 	for topicList in topicLists:
 		df = filterByDateTimeRange(df, minDt, maxDt)
 		tf = queryTopic(df, topicList)

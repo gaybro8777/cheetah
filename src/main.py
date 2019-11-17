@@ -273,9 +273,9 @@ def printLogo():
 
 def unzipHarvardData():
 	shorensteinDir = os.path.join(reproDir,"shorenstein_repro")
-	outputCsv = os.path.join(datadir, "stories_election_web_cheetofied.csv")
+	outputCsv = os.path.join(dataDir, "stories_election_web_cheetofied.csv")
 	splitter = GzSplitter()
-	if splitter.Unplit(shorensteinDir, outputCsv, fsChecking=True) <= 0:
+	if splitter.Unsplit(shorensteinDir, outputCsv, fsChecking=True) <= 0:
 		print("An error occurred when unsplitting/uncompressing cheetah-fied shorenstein data. See console output.")
 		return
 	else:
