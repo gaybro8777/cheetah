@@ -54,7 +54,7 @@ def sumAndPlotCheetahValues(grp, label=None, spanAvg=None):
 			if spanAvg is not None and spanAvg > 1:
 				summed = summed.ewm(span=spanAvg).mean()
 			ax = summed.plot(label=label)
-			ax.legend(loc=3)
+			ax.legend(loc=0)
 		else:
 			summed.plot()
 	else:
@@ -67,6 +67,15 @@ def weightCheetahScoresByShares(df, shareCol="facebook_share_count"): #harvard d
 def filterCheetahNans(df):
 	# Missing cheetah values (e.g. not headline/language data) are stored as NaN. This filters them.
 	return df[ df['cheetah'].notnull() ]
+
+def filterCheetahZeroes(df):
+	"""
+	It is a good idea to filter cheetah scores which are zero, because for the harvard dataset (which has only short headlines, not much language),
+	a score of zero often means there is no score or an indeterminate one due to insufficient language data. It is possible for content to
+	have data, and still result in a score of zero, but this is exceedingly rare in floating point. So filtering zeroes will stand little chance
+	of loss of real zero scores.
+	"""
+	return df[ df['cheetah'] != 0.0 ]
 
 def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=False):
 	spanAvg = 2
@@ -89,19 +98,22 @@ def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=Fa
 	plt.show()
 
 def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
-	# Plot topical cheetah values as histograms. One plot, multiple histograms, one for each topic.
-	#@df: A source-filtered df derived from the harvard df. NOTE: Must have publish_date values converted to datetime before calling!
-
+	"""
+	Plot topical cheetah values as histograms. One plot, multiple histograms, one for each topic.
+	@df: A source-filtered df derived from the harvard df. NOTE: Must have publish_date values converted to datetime before calling!
+	"""
 	# plot basic, unweighted cheetah histogram
-	bins = 200
+	bins = 100
 	for topicList in topicLists:
 		df = filterByDateTimeRange(df, minDt, maxDt)
 		tf = queryTopic(df, topicList)
 		tf = filterCheetahNans(tf)
+		# filtering zeroes must be done since zero is an ambiguous value: it could mean no-score or that the actual cheetah score is zero. The latter would be extremely rare, in floating point.
+		tf = filterCheetahZeroes(tf)
 		series = tf["cheetah"]
 		series.hist(bins=bins, grid=True, label=topicList[0])
 	
-	plt.legend(loc=2)
+	plt.legend(loc=0)
 	plt.title("Cheetah histogram")
 	plt.show()
 
@@ -115,10 +127,12 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		df = filterByDateTimeRange(df, minDt, maxDt)
 		tf = queryTopic(df, topicList)
 		tf = filterCheetahNans(tf)
+		# filtering zeroes must be done since zero is an ambiguous value: it could mean no-score or that the actual cheetah score is zero. The latter would be extremely rare, in floating point.
+		tf = filterCheetahZeroes(tf)
 		series = tf["cheetah"]
 		series.hist(bins=bins, grid=True, weights=tf[share_column], label=topicList[0])
 
-	plt.legend(loc=2)	
+	plt.legend(loc=0)	
 	plt.title("Cheetah histogram, weighted by "+share_column) 
 	plt.show()
 
