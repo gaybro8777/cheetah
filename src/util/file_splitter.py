@@ -14,9 +14,12 @@ Given a very large file (>1GB or so), split the file into multiple chunks.
 Given a collection of chunks, reassemble into file. This is basically the
 same as the linux split command, but using python for platform independence.
 
-FileSplitter: the file splitter.
-GzSplitter: pass this a large uncompressed file, compress it to a gz file, then split the gz into multiple files of size @chunkMb.
-The Unsplit command just does the inverse: pass it a folder of split file fragments, cat them into a single gz, and uncompress.
+- FileSplitter: the file splitter.
+- GzSplitter: pass this a large uncompressed file, compress it to a gz file, then split the gz into multiple files of size @chunkMb.
+  The Unsplit command just does the inverse: pass it a folder of split file fragments, cat them into a single gz, and uncompress.
+
+In a professional setting, you'll want more file system checks and other error handling (e.g., no 
+naughty user paths, zip slip prevention, more basic checks).
 
 """
 import os
