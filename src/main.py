@@ -24,6 +24,8 @@ from data_transformer import DataTransformer
 from zipfile import ZipFile
 from util.fasttext_downloader import FastTextDownloader
 from util.file_splitter import GzSplitter
+# TODO: Factor cheetah munge code into first-class code/classes
+import scripts.topical_sentiment_series as cheetah_munging
 
 
 dataDir = "../data/"
@@ -278,9 +280,11 @@ def unzipHarvardData():
 	else:
 		print("Cheetah-fied shorenstein 2016 web content data successfully exported to "+shorensteinDir)
 
+def cheetahHarvardAnalysis():
+	cheetah_munging.seriesMunging()
+
 def printIntro():
 	desc = """
-
                    ________  _______________________    __  __
                   / ____/ / / / ____/ ____/_  __/   |  / / / /
                  / /   / /_/ / __/ / __/   / / / /| | / /_/ / 
@@ -334,31 +338,26 @@ def mainMenu():
 	printLogo()
 	printIntro()
 
-	cmdDict = {
-		"0": downloadEnglishModel,
-		"1": cheetahAbleAnalysis,
-		"2": harvardAnalysis,
-		"3": harvardAnalyzeAndPersist,
-		"4": unzipHarvardData,
-		"5": modelAnalysis,
-		"6": printIntro,
-		"7": printLicense,
-		"8": exit
-	}
+	cmds = [
+		(downloadEnglishModel, "Download English FastText model"),
+		(cheetahAbleAnalysis, "Cheetah ABLE-data analysis"),
+		(cheetahHarvardAnalysis, "Cheetah Harvard-Shorenstein offline analysis (use this one)"),
+		(harvardAnalysis, "Cheetah inline analysis--Harvard shorenstein"),
+		(harvardAnalyzeAndPersist, "Analyze and persist Harvard data with cheetah (Warning: 48h+ runtime!)"),
+		(unzipHarvardData, "Unzip Harvard data (includes cheetah-score column)"),
+		(modelAnalysis, "Model Analysis"),
+		(printIntro, "Intro"),
+		(printLicense, "License"),
+		(exit, "Exit")
+	]
+
+	cmdDict = dict((str(i), cmd) for i, cmd in enumerate(cmds))
 
 	while True:
-		print("Main menu")
-		print("\t0) Download English FastText model")
-		print("\t1) Cheetah analyis--ABLE")
-		print("\t2) Cheetah analysis--Harvard Shorenstein")
-		print("\t3) Analyze and persist Harvard data with cheetah (Warning: 48h+ runtime!)")
-		print("\t4) Unzip Harvard data to repro folder (includes cheetah column)")
-		print("\t5) Model analysis")
-		print("\t6) Intro")
-		print("\t7) License info")
-		print("\t8) Exit")
+		print("Main menu", end="")
+		print("".join(["\n\t{}) {}".format(cmd[0],cmd[1][1]) for cmd in sorted(cmdDict.items(), key=lambda kvp:kvp[0])]))
 		option = selectOption(cmdDict.keys())
-		cmd = cmdDict[option]
+		cmd = cmdDict[option][0]
 		cmd()
 
 def main():

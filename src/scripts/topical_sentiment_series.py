@@ -6,6 +6,7 @@ scores per content item.
 
 """
 
+import os
 import datetime
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -29,6 +30,9 @@ def convertPublishDate(df):
 def loadData():
 	#TODO: only read columns of interest. This reads tons on unused data.
 	dataPath = "../../data/stories_election_web_cheetofied.csv"
+	if not os.path.isfile(dataPath):
+		dataPath = "../data/stories_election_web_cheetofied.csv"
+
 	print("Loading dataset from "+dataPath)
 	df = pd.read_csv(dataPath, header=0)
 	return convertPublishDate(df)
@@ -202,18 +206,22 @@ def seriesMunging():
 		plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
 		done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
 
-"""
-#seriesMunging()
-topicLists = [["trump", "donald"], ["clinton", "hillary"]]
-df = loadData()
-#df = filterCheetahNans(df)
-minDt = datetime.datetime(year=2015, month=1, day=1)
-maxDt = datetime.datetime(year=2016, month=12, day=31)
-#plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
-"""
-seriesMunging()
 
+def main():
+	"""
+	#seriesMunging()
+	topicLists = [["trump", "donald"], ["clinton", "hillary"]]
+	df = loadData()
+	#df = filterCheetahNans(df)
+	minDt = datetime.datetime(year=2015, month=1, day=1)
+	maxDt = datetime.datetime(year=2016, month=12, day=31)
+	#plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
+	"""
+	
+	seriesMunging()
 
+if __name__ == "__main__":
+	main()
 
 """
 def 
