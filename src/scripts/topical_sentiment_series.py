@@ -1,5 +1,5 @@
 """
-Scripts for munging cheetafied harvard csv data, where the csv has been appended with a column of cheetah
+Scripts for munging cheetafied harvard shorenstein csv data, where the csv has been appended with a column of cheetah
 scores per content item.
 * load data
 * filter, bin, and plot scores by organization, topic, week, etc
@@ -9,13 +9,20 @@ scores per content item.
 import os
 import datetime
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.mlab as mlab
 
 def queryTopic(df, topics):
 	"""
 	@df: The stories_election_csv data frame
-	@topics: Topic terms by which to filter on 'title'.
+	@topics: Topic terms by which to filter on 'title'; may include regex'es.
 	"""
+
+	#if querying all records, just return all records. Note this will return even those with empty titles.
+	if isKleene(topics):
+		return df
+
 	pattern = "|".join(topics)
 	#print("PATTERN: ",pattern)
 	tf = df[ df['title'].str.contains(pattern, case=False, regex=True, na=False) ]
@@ -101,6 +108,24 @@ def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=Fa
 	plt.title(title)
 	plt.show()
 
+def plotHist(df, col, numBins=100, weightCol=None, bestFit=True, label=None, asDensity=True):
+	# Plots, but does not show, a histogram of @col values; if weightCol is not None, then hist is weighted by this column (e.g., social shares)
+	# The pattern is just to call this multiple times to plot histograms, then call plt.show() or savefig().
+	series = df[col]
+	weights = df[weightCol] if weightCol is not None else None
+	density = 1 if asDensity else None
+	n, bins, patches = plt.hist(series, bins=numBins, weights=weights, label=label, density=density)
+	# add a best-fit line using normal-dist
+	if bestFit:
+		mu = series.mean()
+		sigma = series.std()
+		ys = np.exp(-0.5 * ((bins - mu)**2 / sigma**2))  / (np.sqrt(2 * np.pi) * sigma)
+		if not asDensity:
+			# converts pdf back into the space of the frequency-histogram
+			ys = ys * np.sum(np.diff(bins) * n)
+		plt.plot(bins, ys, '--')
+	return n, bins, patches
+
 def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 	"""
 	Plot topical cheetah values as histograms. One plot, multiple histograms, one for each topic.
@@ -114,14 +139,14 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		tf = filterCheetahNans(tf)
 		# filtering zeroes must be done since zero is an ambiguous value: it could mean no-score or that the actual cheetah score is zero. The latter would be extremely rare, in floating point.
 		tf = filterCheetahZeroes(tf)
-		series = tf["cheetah"]
-		series.hist(bins=bins, grid=True, label=topicList[0])
-	
+		plotHist(tf, "cheetah", bins, bestFit=True, label=topicList[0])	
+
+	#plt.grid(b=True, which='major', color='#666666', linestyle='-')
 	plt.legend(loc=0)
 	plt.title("Cheetah histogram")
 	plt.show()
 
-	# plot weighted histogram, by one of the social network
+	# plot weighted histogram, by one of the social networks
 	bins = 200
 	fb_column = "facebook_share_count"
 	bitly_column = "bitly_click_count" # bitly and tweet counts suck; too much missing data, or none
@@ -133,8 +158,7 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		tf = filterCheetahNans(tf)
 		# filtering zeroes must be done since zero is an ambiguous value: it could mean no-score or that the actual cheetah score is zero. The latter would be extremely rare, in floating point.
 		tf = filterCheetahZeroes(tf)
-		series = tf["cheetah"]
-		series.hist(bins=bins, grid=True, weights=tf[share_column], label=topicList[0])
+		plotHist(tf, "cheetah", bins, weightCol=share_column, bestFit=True, label=topicList[0])	
 
 	plt.legend(loc=0)	
 	plt.title("Cheetah histogram, weighted by "+share_column) 
@@ -142,21 +166,29 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 
 def filterBySource(df, urls):
 	print("Getting by source per urls: ", urls)
+
+	# If querying for all, just return all records
+	if isKleene(urls):
+		return df
+
 	return df[ df['media_url'].str.contains("|".join(urls), case=False, na=False) ]
 
 def getSourceUrls(df):
 	valid = False
 	while not valid:
-		urls = [url.strip() for url in input("Enter urls separated by commas, to match org media_url fields by substring: ").split(",") if len(url.strip()) > 0]
+		urls = [url.strip() for url in input("Enter urls separated by commas, by which to substring match on media_url: ").split(",") if len(url.strip()) > 0]
 		if len(urls) == 0:
 			print("Empty list. Re-enter urls.")
 		else:
-			urlSeries = df[ df['media_url'].str.contains("|".join(urls), case=False) ]['media_url']
+			if isKleene(urls):
+				urlSeries = df["media_url"]
+			else:
+				urlSeries = df[ df['media_url'].str.contains("|".join(urls), case=False) ]['media_url']
 			hitCount = urlSeries.size
 			hits = urlSeries.values.tolist()
 			# uniquify hits
-			hits = list(set(hits))
-			print("{} matching urls in data {}".format(len(hits), ",".join(set(hits))))
+			hits = sorted(list(set(hits)))
+			print("{} matching urls in data {}".format(len(hits), "\n\t"+"\n\t".join(hits)))
 			print("{} org hits (records)".format(hitCount))
 			valid = len(hits) > 0
 			if not valid:
@@ -164,21 +196,30 @@ def getSourceUrls(df):
 
 	return urls
 
-def getTopics(prompt="Enter comma-separated terms on a topic: "):
+def isKleene(queryTerms):
+	return "*" in queryTerms
+
+def getTopics(prompt="Enter comma-separated terms on a topic (or regex): "):
 	valid = False
 	while not valid:
 		topics = [topic.strip() for topic in input(prompt).split(",") if len(topic.strip()) > 0] 
 		valid = len(topics) > 0
 		if not valid:
 			print("Empty list. Re-enter topics.")
+
+	if "*" in topics:
+		topics = ["*"]
+
 	return topics
 
 def getTopicLists():
 	done = False
 	topicLists = []
 	while not done:
-		topics = getTopics("Enter comma-separated terms on a topic, or 'done' to exit: ")
-		if len(topics) == 1 and topics[0] == "done":
+		topics = getTopics("Enter comma-separated terms on a topic, '*' for all records, and 'done' when complete: ")
+		if len(topics) == 1 and (topics[0] == "done" or topics[0] == "*"):
+			if topics[0] == "*":
+				topicLists.append(topics)
 			done = len(topicLists) > 0
 			if not done:
 				print("Error: no topics entered. Re-enter.")
@@ -201,8 +242,8 @@ def seriesMunging():
 		# get topics, group by week, and plot aggregate cheetah values by week
 		minDt = datetime.datetime(year=2015, month=1, day=1)
 		maxDt = datetime.datetime(year=2016, month=12, day=31)
-		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
-		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=True)
+		#plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+		#plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=True)
 		plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
 		done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
 
