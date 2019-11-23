@@ -79,6 +79,13 @@ def filterCheetahNans(df):
 	# Missing cheetah values (e.g. not headline/language data) are stored as NaN. This filters them.
 	return df[ df['cheetah'].notnull() ]
 
+def prettyGrid():
+	# Updates the current plot state with a nice grid.
+	plt.grid(b=True, which='major', color='#666666', linestyle='-')
+	# Show the minor grid lines with very faint and almost transparent grey lines
+	plt.minorticks_on()
+	plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+
 def filterCheetahZeroes(df):
 	"""
 	It is a good idea to filter cheetah scores which are zero, because for the harvard dataset (which has only short headlines, not much language),
@@ -108,22 +115,24 @@ def plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=Fa
 	plt.title(title)
 	plt.show()
 
-def plotHist(df, col, numBins=100, weightCol=None, bestFit=True, label=None, asDensity=True):
+def plotHist(df, col, numBins=100, weightCol=None, bestFit=True, label=None, asDensity=False):
 	# Plots, but does not show, a histogram of @col values; if weightCol is not None, then hist is weighted by this column (e.g., social shares)
 	# The pattern is just to call this multiple times to plot histograms, then call plt.show() or savefig().
 	series = df[col]
 	weights = df[weightCol] if weightCol is not None else None
 	density = 1 if asDensity else None
-	n, bins, patches = plt.hist(series, bins=numBins, weights=weights, label=label, density=density)
+	prettyGrid()
+	n, bins, patches = plt.hist(series, bins=numBins, weights=weights, label=label, density=density, alpha=0.5)
 	# add a best-fit line using normal-dist
 	if bestFit:
 		mu = series.mean()
 		sigma = series.std()
+		lastColor = patches[0].get_facecolor()
 		ys = np.exp(-0.5 * ((bins - mu)**2 / sigma**2))  / (np.sqrt(2 * np.pi) * sigma)
 		if not asDensity:
 			# converts pdf back into the space of the frequency-histogram
 			ys = ys * np.sum(np.diff(bins) * n)
-		plt.plot(bins, ys, '--')
+		plt.plot(bins, ys, "--", color=lastColor, lw=2.0, alpha=1.0)
 	return n, bins, patches
 
 def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
