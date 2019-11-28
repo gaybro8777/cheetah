@@ -1,8 +1,10 @@
-<div align="center">
+<div align="center" style="-moz-user-select: none; user-select: none; pointer-events: none; cursor: default; text-decoration: none; color: black;">
 <img src="./misc/logos/cheetah_invert.jpeg" />
 <img src="./misc/logos/cheetah_logo_invert.jpeg" />
 </div>
-
+&nbsp;
+&nbsp;
+&nbsp;
 Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
 Techniques graduate here from other data-extraction and algorithmic projects. While this repro
 contains algorithms and code, its intent is not as a library but to provide a self-contained repro environment for academic research and dissemination.
