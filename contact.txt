@@ -1,7 +1,7 @@
 If you need full datasets, custom signal lexica, or more advanced code feel free to contact me.
 
 	linkedin.com/in/jesse-waite
-	nice_yeti a t proton m a i l
+	nice_yeti a t proton m a i l 
 
 Datasets are available on request.
 
@@ -15,7 +15,7 @@ for share-regression tasks (Shorenstein Center data for example).
 
 All content data is derived from openly available archive api's and social media api's, and is protected by fair-use for research/criticism purposes.
 
-100+ available full-content datasets for national, local, and foreign orgs:
+100+ available full-content datasets for national, local, and foreign orgs, often including a decade or more content:
 	-novayagazeta 2013-2018
 	-foxnews 2013-2018
 	-cnn 2010-2018
@@ -32,5 +32,5 @@ All content data is derived from openly available archive api's and social media
 
 All datasets are 2-32GB in size, much too large to post on most sites.
 
-All available free of charge to formal researchers under fair-use.
+Available free of charge to formal researchers under fair-use.
 

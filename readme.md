@@ -2,11 +2,10 @@
 ![cheetah_logo](./misc/logos/cheetah_invert.jpeg)
 
 
-<p align="center">
+<div align="center">
 <img src="./misc/logos/cheetah_logo_invert.jpeg" />
 <img src="./misc/logos/cheetah_invert.jpeg" />
-</p>
-
+</div>
 
 Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
 Techniques graduate here from other data-extraction and algorithmic projects. While this repro
@@ -16,9 +15,9 @@ By the way, to my knowledge I am still the sole and ONLY machine learning develo
 I have a fulltime job and am very resource limited, so I do what I can. However the adversaries in this field are working overtime, often with millions in state, hedgefund, and corporate backing.
 I know because I have personally turned down multiple groups down for employment, and will continue to do so.
 
-Please star this project and consider supporting via paypal or other means. Best of luck.
+Please star this project and consider supporting via paypal or other means. And godspeed
 
-# Running Cheetah
+## Running Cheetah
 
 Cheetah is simple to run. Cd into src/ and run main.py with python3:
 
