@@ -12,7 +12,7 @@ By the way, to my knowledge I am still the sole and ONLY machine learning develo
 I have a fulltime job and am very resource limited, so I do what I can. However the adversaries in this field are working overtime, often with millions in state, hedgefund, and corporate backing.
 I know because I have personally turned down multiple groups down for employment, and will continue to do so.
 
-Please star this project and consider supporting via paypal or other means. Good luck, we're all counting on you.
+Please star this project and consider supporting via paypal or other means. In the words of Airplane, good luck, we're all counting on you.
 
 ## Running Cheetah
 
