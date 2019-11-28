@@ -26,13 +26,14 @@ The first task is to download the FastText english term-vector model from Facebo
 models/english/ directory. I provided a tool to do this, or you may manually download the '.text' vector model via the website:
 * https://fasttext.cc/docs/en/crawl-vectors.html
 * --> english -> '.text' -> downloaded file is named "cc.en.300.vec.gz"
-* NOTE: Don't download the .bin model! Get the .text model
+* **NOTE: do not download the .bin model**, get the much smaller ".text" model.
 * Unzip the model and place it at models/english/cc.en.300.vec.gz
 
 Once downloaded, select 'cheetah repro' from the main menu options and let it complete. The 
 calculations take a few minutes to complete on a modest machine.
 
-Requirements:
+## Requirements
+
 * Python 3.5+
 
 Non-standard packages:
@@ -51,5 +52,7 @@ python packages I am missing. If you see exceptions having to do with missing pa
 them individually with pip3 and retry:
 
 	pip3 install --user [package name]
+
+Dockerizing Cheetah is in progress.
 
 
