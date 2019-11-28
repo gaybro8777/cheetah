@@ -1,5 +1,10 @@
-<center>![alt text](misc/logos/cheetah_invert.jpeg "ZZZZZ")</center>
-<center>![alt text](misc/logos/cheetah_invert_logo.jpeg)</center>
+![cheetah_logo](./misc/logos/cheetah_invert.jpeg "ZZZZZ")
+![cheetah_logo_text](./misc/logos/cheetah_invert_logo.jpeg)
+
+<p align="center">
+<img src="./misc/logos/cheetah_invert.jpeg">
+<img src="./misc/logos/cheetah_invert_logo.jpeg">
+</p>
 
 Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
 Techniques graduate here from other data-extraction and algorithmic projects. While this repro
