@@ -1,10 +1,6 @@
-![cheetah_logo_text](./misc/logos/cheetah_logo_invert.jpeg)
-![cheetah_logo](./misc/logos/cheetah_invert.jpeg)
-
-
 <div align="center">
-<img src="./misc/logos/cheetah_logo_invert.jpeg" />
 <img src="./misc/logos/cheetah_invert.jpeg" />
+<img src="./misc/logos/cheetah_logo_invert.jpeg" />
 </div>
 
 Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
@@ -15,7 +11,7 @@ By the way, to my knowledge I am still the sole and ONLY machine learning develo
 I have a fulltime job and am very resource limited, so I do what I can. However the adversaries in this field are working overtime, often with millions in state, hedgefund, and corporate backing.
 I know because I have personally turned down multiple groups down for employment, and will continue to do so.
 
-Please star this project and consider supporting via paypal or other means. And godspeed
+Please star this project and consider supporting via paypal or other means. Good luck, we're all counting on you.
 
 ## Running Cheetah
 
