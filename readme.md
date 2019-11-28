@@ -4,10 +4,6 @@
 </div>
 &nbsp;
 
-&nbsp;
-
-&nbsp;
-
 Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
 Techniques graduate here from other data-extraction and algorithmic projects. While this repro
 contains algorithms and code, its intent is not as a library but to provide a self-contained repro environment for academic research and dissemination.
