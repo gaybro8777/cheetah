@@ -11,7 +11,7 @@ contains algorithms and code, its intent is not as a library but to provide a se
 To date, I am still the sole and ONLY public machine learning developer or security researcher in this space, a very fertile one for research.
 However, I am also a fulltime engineer and am very resource limited, so I can only do what I can.
 By contrast, the adversaries in this field are working overtime against two centuries of democratic norms, often backed by millions in state, hedgefund, and corporate funding.
-I have personally turned down multiple such groups down for lucrative roles, and I will continue to do so to inform and educate the public about this new public nuisance, and how to make it transparent.
+I have personally turned down multiple such groups down for lucrative roles, and I will continue to do so to inform and educate the public about this new public nuisance, and how to track it.
 
 Please star this project and consider supporting via paypal or other means.
 In the wise words of Airplane, good luck, we're all counting on you.
