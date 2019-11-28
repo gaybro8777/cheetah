@@ -3,8 +3,8 @@
 
 
 <p align="center">
-<img src="./misc/logos/cheetah_invert_logo.jpeg">
-<img src="./misc/logos/cheetah_invert.jpeg">
+<img src="./misc/logos/cheetah_invert_logo.jpeg" />
+<img src="./misc/logos/cheetah_invert.jpeg" />
 </p>
 
 
