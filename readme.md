@@ -1,9 +1,9 @@
-![cheetah_logo_text](./misc/logos/cheetah_invert_logo.jpeg)
+![cheetah_logo_text](./misc/logos/cheetah_logo_invert.jpeg)
 ![cheetah_logo](./misc/logos/cheetah_invert.jpeg)
 
 
 <p align="center">
-<img src="./misc/logos/cheetah_invert_logo.jpeg" />
+<img src="./misc/logos/cheetah_logo_invert.jpeg" />
 <img src="./misc/logos/cheetah_invert.jpeg" />
 </p>
 
