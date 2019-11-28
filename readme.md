@@ -1,3 +1,18 @@
+<center>![alt text](misc/logos/cheetah_invert.jpeg "ZZZZZ")</center>
+<center>![alt text](misc/logos/cheetah_invert_logo.jpeg)</center>
+
+Cheetah is a machine-learning repository containing counter-misinformation methods and results for reproduction.
+Techniques graduate here from other data-extraction and algorithmic projects. While this repro
+contains algorithms and code, its intent is not as a library but to provide a self-contained repro environment for academic research and dissemination.
+
+By the way, to my knowledge I am still the sole and ONLY machine learning developer or security researcher in this space, a very fertile one for research.
+I have a fulltime job and am very resource limited, so I do what I can. However the adversaries in this field are working overtime, often with millions in state, hedgefund, and corporate backing.
+I know because I have personally turned down multiple groups down for employment, and will continue to do so.
+
+Please star this project and consider supporting via paypal or other means. Best of luck.
+
+# Running Cheetah
+
 Cheetah is simple to run. Cd into src/ and run main.py with python3:
 
 * cd src/
