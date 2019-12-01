@@ -251,8 +251,8 @@ def seriesMunging():
 		# get topics, group by week, and plot aggregate cheetah values by week
 		minDt = datetime.datetime(year=2015, month=1, day=1)
 		maxDt = datetime.datetime(year=2016, month=12, day=31)
-		#plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
-		#plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=True)
+		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt)
+		plotTopicalCheetahTimeSeries(df, topicLists, minDt, maxDt, weightByShares=True)
 		plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt)
 		done = input("Analyze another topic and source? Enter y or n: ").lower() == "n"
 

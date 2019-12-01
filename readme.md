@@ -1,6 +1,6 @@
 <div align="center" style="-moz-user-select: none; user-select: none; pointer-events: none; cursor: default; text-decoration: none; color: black;">
-<img src="./misc/logos/cheetah_invert.jpeg" />
-<img src="./misc/logos/cheetah_logo_invert.jpeg" />
+<img src="./misc/img/cheetah_invert.jpeg" />
+<img src="./misc/img/cheetah_logo_invert.jpeg" />
 </div>
 &nbsp;
 
