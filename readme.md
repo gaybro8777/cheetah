@@ -16,10 +16,10 @@ Cheetah is a machine-learning repository containing counter-misinformation metho
 Techniques graduate here from other data-extraction and algorithmic projects. While this repro
 contains algorithms and code, its intent is not as a library but to provide a self-contained repro environment for research and dissemination.
 The purpose of this project is to inform and educate the public about the new public nuisance of misinformation, using open-source methods to quantify it.
-Because the reality is that reverse-engineering misinformation actors (algorithms, search engines, sites, even entire platforms) is actually very easy to do,
+Because the reality is that reverse-engineering misinformation actors (algorithms, search engines, sites, even entire platforms) is actually very easy,
 using off-the-shelf NLP and machine learning.
 
-Please star this project and consider supporting.
+Run the code and see for yourself.
 
 ## Running Cheetah
 
