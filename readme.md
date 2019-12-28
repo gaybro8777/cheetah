@@ -6,9 +6,9 @@
 
 Tired of unrelenting fake news?
 
-Skeptical of misinformation claims made by tinpot 'experts' [actively engaging in it](https://www.nytimes.com/2018/12/19/us/alabama-senate-roy-jones-russia.html)?
+Skeptical of misinformation claims made by tinpot 'experts' [actively engaging in it themselves](https://www.nytimes.com/2018/12/19/us/alabama-senate-roy-jones-russia.html)?
 
-Worried about the unprecedented encroachment on public discourse by a tiny handful of regionally and politically isolated tech interests?
+Worried about the encroachment on public information by a handful of regionally and politically isolated tech monopolies?
 
 Have no fear, Cheetah is here!
 
@@ -47,12 +47,12 @@ Non-standard packages:
 * matplotlib
 * numpy
 * gensim
-* unidecode (I think this module is non-standard)
+* unidecode
 
 To install these packages, use:
 * pip install -r requirements.txt
 
-Python dependencies are what they are, so fight your environment as needed to get these installed consistently.
+Python dependencies are what they are, so grapple with your environment as needed to get these installed consistently.
 
 I apologize because I want this to be as self-contained as possible, but there may be other required
 python packages I am missing. If you see exceptions having to do with missing packages, just install
