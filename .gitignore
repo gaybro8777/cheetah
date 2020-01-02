@@ -1,7 +1,9 @@
 models/*
 results/*
 data/*
+pages/*
+src/scripts/input.txt
 *pyc
 *lint.txt
 ignore/*
-drafts/*
+private_drafts/*
