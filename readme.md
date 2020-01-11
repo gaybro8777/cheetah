@@ -19,11 +19,12 @@ The purpose of this project is to inform and educate the public about the new pu
 Because the reality is that reverse-engineering misinformation actors (algorithms, search engines, sites, even entire platforms) is actually very easy,
 using off-the-shelf NLP and machine learning.
 
-Run the code and see for yourself.
+Run the code and see for yourself. A work-in-progress paper is provided [here](https://www.nytimes.com/2018/12/19/us/alabama-senate-roy-jones-russia.html).
+Most of this is living code/documentation, since I'm very much a disciple of a "code, not papers" ethic, given the sluggish, elitism of the latter.
 
 ## Running Cheetah
 
-Cheetah is simple to run. Cd into src/ and run main.py with python:
+Cheetah is simple to run. Cd to src/ and run main.py with python:
 
 * cd src/
 * python3 main.py
@@ -54,12 +55,14 @@ To install these packages, use:
 
 Python dependencies are what they are, so grapple with your environment as needed to get these installed consistently.
 
-I apologize because I want this to be as self-contained as possible, but there may be other required
-python packages I am missing. If you see exceptions having to do with missing packages, just install
+I apologize, because the goal is to make Cheetah as self-contained as possible, but there may be other required
+python packages I missed. If you see exceptions having to do with missing packages, just install
 them individually with pip3 and retry:
 
 	pip3 install --user [package name]
 
-Dockerizing Cheetah is in progress.
+## TODO
+* Dockerizing Cheetah is in progress.
+* Pyodide demonstration
 
 
