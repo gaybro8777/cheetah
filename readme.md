@@ -19,7 +19,7 @@ The purpose of this project is to inform and educate the public about the new pu
 Because the reality is that reverse-engineering misinformation actors (algorithms, search engines, sites, even entire platforms) is actually very easy,
 using off-the-shelf NLP and machine learning.
 
-Run the code and see for yourself. A work-in-progress paper is provided [here](https://www.nytimes.com/2018/12/19/us/alabama-senate-roy-jones-russia.html).
+Run the code and see for yourself. A work-in-progress paper is provided [here](https://github.com/niceyeti/cheetah/tree/master/docs/cheetah_paper.odt).
 Most of this is living code/documentation, since I'm very much a disciple of a "code, not papers" ethic, given the sluggish, elitism of the latter.
 
 ## Running Cheetah
