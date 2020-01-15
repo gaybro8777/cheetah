@@ -147,7 +147,7 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 		tf = filterCheetahNans(tf)
 		# filtering zeroes must be done since zero is an ambiguous value: it could mean no-score or that the actual cheetah score is zero. The latter would be extremely rare, in floating point.
 		tf = filterCheetahZeroes(tf)
-		plotHist(tf, "cheetah", bins, bestFit=True, label=topicList[0])	
+		plotHist(tf, "cheetah", bins, bestFit=True, label=topicList[0])
 
 	#plt.grid(b=True, which='major', color='#666666', linestyle='-')
 	plt.legend(loc=0)
@@ -157,7 +157,7 @@ def plotTopicalCheetahHistograms(df, topicLists, minDt, maxDt):
 	# plot weighted histogram, by one of the social networks
 	bins = 200
 	fb_column = "facebook_share_count"
-	bitly_column = "bitly_click_count" # bitly and tweet counts suck; too much missing data, or none
+	bitly_column = "bitly_click_count" # bitly and tweet counts suck; too much missing data, or none at all
 	tweet_column = "normalized_tweet_count"
 	share_column = fb_column
 	for topicList in topicLists:

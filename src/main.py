@@ -299,7 +299,7 @@ Welcome to Cheetah, a cousin of the ABLE-ITEM deep web content extractor and Sen
 engine. I am an American NLP developer and informatic security researcher specializing in the 
 use of nlp and deep learning for counter-misinformation. The purpose of this tool is to provide
 live-demos of open source multi-language misinformation analysis methods. Also some other (and
-perhaps funner) nlp stuff too. This basic interface is primarily for algorithmic/dataset repro purposes.
+perhaps funner) nlp stuff. This interface is primarily for algorithmic/dataset repro purposes.
 
 
 To execute cheetah repro, begin by downloading the fasttext english '.text' model (option 0).
@@ -329,7 +329,7 @@ Upcoming analyses:
 	can evaluate the biases of search algorithms as misinformation actors fiddle with their
 	parameters to obtain some target behavior.
 
-Cheers.
+Cheers!
 """
 	print(desc)
 
