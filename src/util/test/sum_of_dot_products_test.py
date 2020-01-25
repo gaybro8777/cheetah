@@ -15,6 +15,11 @@ If you do sum re-arranging/factoring, you can show that this simplifies to the m
 
 This script verifies this empirically, but is also for observing any numerical rounding
 of either implementation.
+
+The implication is that cheetah calculations can be made much faster for two reasons:
+1) The sums factor, like above
+2) More importantly, based on (1) the entire summation over sentiment/signal terms can
+be removed and pre-computed! Holee-toledoh
 """
 
 import numpy as np

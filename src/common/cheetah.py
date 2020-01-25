@@ -104,6 +104,7 @@ def netAlgebraicSentiment(queryTerms, sentLex, model, avgByHits=True):
 
 def buildVectorCache(terms, vecModel):
 	"""
+	obsolete
 	@terms: some terms to cache, e.g. ones we will repeatedly calculate/lookup like signal/sentiment terms
 	@vecModel: A word2vec model with a .wv attribute 
 	Builds and returns a dictionary mapping term strings to vector 2-ples. The first member of the tuple is
@@ -138,6 +139,62 @@ def cossimLexiconGenerator(model, queryTerms):
 
 	return rankedTerms
 
+def cheetifyHeadline_singleLex_optimized(headline, avgVec, sumUnitVec, model):
+	"""
+	The single-lexicon counterpart to cheetifyHeadline_optimized (see that func's header).
+	NOTE: Single lexicon analyses are somewhat exploratory, since if you plot their values on a time series for instance,
+	lower values ambiguously mean both less-information and/or lower scores. Both methods could use a method
+	to improve on this property.
+	"""
+	avgVec[:] = 0.0
+	n = 0.0
+	sumSimilarity = 0.0 # TODO: Could instead return NaN for no-information, since zero is ambiguous with an actual score of zero
+	#average all words in doc into a single vector
+	for word in headline.GetFullText().split():
+		if word in model.wv.vocab:
+			avgVec += model.wv[word]
+			n += 1.0
+
+	if n > 0.0:
+		avgVec /= n
+		avgVecNorm = np.linalg.norm(avgVec)
+		sumSimilarity = avgVec.dot(sumUnitVec) / avgVecNorm
+
+	headline.Attrib["cheetah_lex"] = sumSimilarity
+	return sumSimilarity
+
+def cheetifyHeadline_optimized(headline, avgVec, sumPosUnitVec, sumNegUnitVec, model):
+	"""
+	As shown in src/util/test/sum_of_dot_products, the inner summation over cosine similarity factors such
+	that the cheetah sentiment can be calculated by simply taking the dot product of the document's average
+	term-vector and the sum signal norm vector.
+	That is:
+		-get the average document term vector, v_avg
+		-calculate the sum-of-unit vectors for the signal lexica: v_sig = Sigma[ v / |v| ]
+		-return (v_avg dot v_sig) / |v_avg|
+	Note, that's the gist, but there may be errors in this description. But its mathematically sound, since
+	a double sum over cosine similarities factors to a far more efficient form than actually calculating the
+	full sum, since the signal lexica sum-of-norm vector can be pre-computed and re-used. 
+	Or, just do the math...
+	"""
+	avgVec[:] = 0.0
+	n = 0.0
+	sumSimilarity = 0.0 # TODO: Could instead return NaN for no-information, since zero is ambiguous with an actual score of zero
+	#average all words in doc into a single vector
+	for word in headline.GetFullText().split():
+		if word in model.wv.vocab:
+			avgVec += model.wv[word]
+			n += 1.0
+
+	if n > 0.0:
+		avgVec /= n
+		avgVecNorm = np.linalg.norm(avgVec)
+		sumSimilarity = (avgVec.dot(sumPosUnitVec) - avgVec.dot(sumNegUnitVec)) / avgVecNorm
+
+	headline.Attrib["cheetah"] = sumSimilarity
+	return sumSimilarity
+
+# OBSOLETE: used optimized version instead; much of the math algebraically factors to a much simpler, faster form.
 def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 	avgVec[:] = 0.0
 	n = 0.0
@@ -164,29 +221,42 @@ def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 	headline.Attrib["cheetah"] = sumSimilarity
 	return sumSimilarity
 
-def getCacheParams(model, sentLex):
-	sentLex.Positives = [pw for pw in sentLex.Positives if pw in model.wv]
-	sentLex.Negatives = [nw for nw in sentLex.Negatives if nw in model.wv]
+def filterLex(model, lexicon):
+	return [w for w in lexicon if w in model.wv]
+
+def filterSentLex(model, sentLex):
+	"""
+	Filters sentiment lexicon so it includes only terms in the model. Note few/no words will be removed
+	if the lexicon was generated from the model itself.
+	"""
+	sentLex.Positives = filterLex(model, sentLex.Positives)
+	sentLex.Negatives = filterLex(model, sentLex.Negatives)
 	# Re-balance after filtering through model lexicon
-	sentLex.getBalancedSets()
-	print("After balancing/filtering, lexicon contains {} positives, {} negatives".format(len(sentLex.Positives), len(sentLex.Negatives)))
+	return sentLex.getBalancedSets()
 
-	# maps term keys to vector 2-ples as: term -> (termVec, termNorm)
-	posCache = buildVectorCache(sentLex.Positives, model)
-	negCache = buildVectorCache(sentLex.Negatives, model)
-	posCache = list(posCache.values())#[:2000] #take only the values, since we no longer need string mappings; after this point these are 'bags of vectors'
-	negCache = list(negCache.values())#[:2000]
-	avgVec = np.zeros(model.vector_size)
-
-	return sentLex, posCache, negCache, avgVec
+def getSumUnitVec(model, words):
+	"""
+	Returns the sum of unit vectors from the passed model for some lexica.
+	NOTE: This is not a unit vector, it is a sum of unit vectors.
+	"""
+	sumNormVec = np.zeros(model.vector_size)
+	for w in words:
+		vw = model.wv[w]
+		sumNormVec += (vw / np.linalg.norm(vw))
+	return sumNormVec
 
 def analysis3(model, headlines, sentLex):
 	print("Analysis 3...")
-	sentLex, posCache, negCache, avgVec = getCacheParams(model, sentLex)
+	
+	sentLex = filterSentLex(model, sentLex)
+	avgVec = np.zeros(model.vector_size)
+	sumPosUnitVec = getSumUnitVec(model, sentLex.Positives)
+	sumNegUnitVec = getSumUnitVec(model, sentLex.Negatives)
+
 	try:
 		for i, headline in enumerate(headlines):
-			sumSimilarity = cheetifyHeadline(headline, avgVec, posCache, negCache, model)
-			if i % 50 == 49:
+			sumSimilarity = cheetifyHeadline_optimized(headline, avgVec, sumPosUnitVec, sumNegUnitVec, model)
+			if i % 10000 == 9999:
 				print("\rSim: {:.3f}, document {} of {}      ".format(sumSimilarity, i, len(headlines)), end="")
 	except:
 		traceback.print_exc()
@@ -194,35 +264,19 @@ def analysis3(model, headlines, sentLex):
 #@lexicon: A Lexicon object with a Words attribute
 def analysis3_SingleLexicon(model, headlines, lexicon):
 	print("Analysis 3 single lexicon...")
-	signalTerms = [term for term in lexicon.Words if term in model.wv]
-	print("After filtering by model vocab, lexicon contains {} terms".format(len(signalTerms)))
 
-	norms = dict() #pre-compute lexicon norms
-	for term in signalTerms:
-		norms[term] = np.linalg.norm( model.wv[term] )
+	input("WARNING: I haven't tested/verified this yet. Enter any key to continue, and remove this input line once tested.")
 
+	signalTerms = filterLex(model, lexicon.Words)
 	avgVec = np.zeros(model.vector_size)
+	sumLexUnitVec = getSumUnitVec(model, lexicon.Words)
+	signalTerms = [term for term in lexicon.Words if term in model.wv]
+	print("After filtering by model vocab, lexicon contains {} terms ({} before filtering)".format(len(signalTerms), len(lexicon.Words)))
+
 	try:
 		for i, headline in enumerate(headlines):
-			avgVec[:] = 0.0
-			n = 0.0
-			sumSimilarity = 0.0
-			#average all words in doc into a single vector
-			for word in headline.GetFullText().split():
-				if word in model.wv.vocab:
-					avgVec += model.wv[word]
-					n += 1.0
-			if n > 0.0:
-				avgVec /= n
-				avgVecNorm = np.linalg.norm(avgVec)
-				#add all positive terms to sum-similarity...
-				for sigTerm in signalTerms:
-					sigVec = model.wv[sigTerm]
-					sigNorm = norms[sigTerm]
-					sumSimilarity += avgVec.dot(sigVec.T) / (sigNorm * avgVecNorm)
-
-			headline.Attrib["cheetah_lex"] = sumSimilarity
-			if i % 10 == 9:
+			sumSimilarity = cheetifyHeadline_singleLex_optimized(headline, avgVec, sumUnitVec, model)
+			if i % 10000 == 9999:
 				print("Sim: {:.3f}, object {} of {}".format(sumSimilarity, i, len(headlines)))
 	except:
 		traceback.print_exc()
