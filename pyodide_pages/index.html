@@ -1,0 +1,396 @@
+<!--
+	Example of calling python from js, to plot a figure, save it, then display in js/html.
+
+	Page: 
+		- drop down for selection of top news sites
+		- on selection, plot organization
+
+
+TODO:
+	-spec loading data from html into python:
+		Options:
+			1) File blob reader using the FileReader api: read entire dataset into memory (shabby). I don't know the pandas api will even read/stream it.
+			2) Hardlink with 'file://[path]/data.csv' and force the user to place the data there
+			3) File/directory chooser:  https://stackoverflow.com/questions/12942436/how-to-get-folder-directory-from-html-input-type-file-or-any-other-way
+					<input type="file" webkitdirectory directory multiple/>
+		Objective: completely local data and analyses, no on-server analyses, no data transfer from server to client.
+		User clicks a load button, navigates to local file, selects it.
+
+	- click Run, send query to python env
+	- receive query in python, run it
+	- render generated plot back in html
+	- memory leaks: advice is "use foo.destroy()" whatever that means: https://pythonlinks.info/pyodide-training-materials
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+    <script type="text/javascript">
+        window.languagePluginUrl = 'http://localhost:8000/'; // set the pyodide support files (packages.json, pyodide.asm.data etc) url
+    </script>
+
+    <script src="pyodide.js"></script>
+
+<style>
+  #progress_bar {
+    margin: 10px 0;
+    padding: 3px;
+    border: 1px solid #000;
+    font-size: 14px;
+    clear: both;
+    opacity: 0;
+    -moz-transition: opacity 1s linear;
+    -o-transition: opacity 1s linear;
+    -webkit-transition: opacity 1s linear;
+  }
+  #progress_bar.loading {
+    opacity: 1.0;
+  }
+  #progress_bar .percent {
+    background-color: #99ccff;
+    height: auto;
+    width: 0;
+  }
+</style>
+</head>
+
+<body>
+  Cheetah pyodide test page <br>
+  Open the browser console to see pyodide output.<br><br>
+
+<!--
+**********************************************************************************
+FILE LOADING COMPONENT
+**********************************************************************************
+-->
+<input type="file" id="files" name="file" />
+<button onclick="abortRead();">Cancel read</button>
+<div id="progress_bar"><div class="percent">0%</div></div>
+
+<script>
+  var reader;
+  var progress = document.querySelector('.percent');
+
+  function abortRead() {
+    reader.abort();
+  }
+
+  function errorHandler(evt) {
+    switch(evt.target.error.code) {
+      case evt.target.error.NOT_FOUND_ERR:
+        alert('File Not Found!');
+        break;
+      case evt.target.error.NOT_READABLE_ERR:
+        alert('File is not readable');
+        break;
+      case evt.target.error.ABORT_ERR:
+        break; // noop
+      default:
+        alert('An error occurred reading this file.');
+    };
+  }
+
+  function updateProgress(evt) {
+    // evt is an ProgressEvent.
+    if (evt.lengthComputable) {
+      var percentLoaded = Math.round((evt.loaded / evt.total) * 100);
+      // Increase the progress bar length.
+      if (percentLoaded < 100) {
+        progress.style.width = percentLoaded + '%';
+        progress.textContent = percentLoaded + '%';
+      }
+    }
+  }
+
+  function handleFileSelect(evt) {
+    // Reset progress indicator on new file selection.
+    progress.style.width = '0%';
+    progress.textContent = '0%';
+
+    reader = new FileReader();
+    reader.onerror = errorHandler;
+    reader.onprogress = updateProgress;
+    reader.onabort = function(e) {
+      alert('File read cancelled');
+    };
+    reader.onloadstart = function(e) {
+      document.getElementById('progress_bar').className = 'loading';
+    };
+    reader.onload = function(e) {
+      // Ensure that the progress bar displays 100% at the end.
+      progress.style.width = '100%';
+      progress.textContent = '100%';
+      setTimeout("document.getElementById('progress_bar').className='';", 2000);
+    }
+
+    // Read in the file as a binary string.
+    reader.readAsBinaryString(evt.target.files[0]);
+  }
+
+  document.getElementById('files').addEventListener('change', handleFileSelect, false);
+</script>
+<!--
+**********************************************************************************
+END FILE LOADING COMPONENT
+**********************************************************************************
+-->
+
+
+
+
+
+<!--
+**********************************************************************************
+Url search field
+- split the input on comma
+- query for urls in csv data
+- add urls to url_list element
+**********************************************************************************
+-->
+<div id="url_search" style="border: thin solid black; padding: 2px; margin: 1px; width: 1000px;">
+<div style="display: flex; flex-direction:column">
+<span>Enter url substrings, separated by commas:</span>
+<input type="text" id="search_urls" placeholder="Example: www.example.com, example.international.com, example.co.uk" name="search_urls" required minlength="3" maxlength="200" size="20">
+</div>
+
+<span>Matched urls (review these to refine search):</span>
+	<div id="url_results" style="display: flex; flex-direction: column; border: 1px solid black; height: 200px; overflow-y: auto; overflow-x: hidden;">
+	</div>
+</div>
+
+<script>
+const url_search = document.getElementById('url_search');
+url_search.addEventListener("input", onUrlSearch);
+
+function onUrlSearch(e) {
+	var url_results = document.getElementById('url_results');
+	
+	while (url_results.hasChildNodes()) {
+		url_results.removeChild(url_results.lastChild);
+	}
+
+	var urls = e.target.value.split(",");
+
+	// TODO: query for the urls in the dataset
+
+	urls.forEach(function(url){
+		url = url.trim();
+		if(url != ""){
+			var resultEle = document.createElement("span");
+			resultEle.append(url);
+			url_results.appendChild(resultEle);
+		}
+	});
+}
+</script>
+
+<!--
+**********************************************************************************
+Analysis selector
+**********************************************************************************
+-->
+
+<div style="display: flex; flex-direction: column; width: 300px;">
+<span>Select analysis:</span>
+<select id="analysis">
+  <option value="partisan">Partisan (democrat/republican)</option>
+  <option value="candidate">Candidate (clinton/trump)</option>
+</select>
+</div>
+
+
+
+<!--
+**********************************************************************************
+Run button:
+- when clicked, execute query
+- display new plot in plotting region
+**********************************************************************************
+-->
+<button id="run_button" onclick="runAnalysis();" height="100px">Run analysis</button>
+
+<!--
+**********************************************************************************
+Python for doing the end goal: load the data into pandas, plot it, display
+back in html. 
+
+
+TODO 2/3:
+1) Load data from the file reader into a data frame
+2) Run the time series script to plot dataset values
+3) Cleanup
+Do each of these with minimal working examples.
+
+**********************************************************************************
+-->
+
+<script type="text/javascript">
+languagePluginLoader.then(() => {
+	// pyodide is now ready to use...
+	console.log(pyodide.runPython('print("hello")'));
+	pyodide.loadPackage(['matplotlib','pandas']).then(() => {
+	pyodide.runPython(`
+
+import numpy as np
+from matplotlib import pyplot as plt
+from js import document
+import pandas as pd
+import pyodide
+import io #for stringio
+
+# create a new div for the plot
+def create_root_element1(self):
+    div = document.createElement('div')
+    document.body.appendChild(div)
+    return div
+
+# find an existing div for a plot
+#you'll need to put a div with appropriate id somewhere in the document
+def create_root_element2():
+    return document.getElementById('pyplotdiv')
+
+def plotSomething():
+	x = np.linspace(0, 2*np.pi, 100)
+	y = np.sin(x)
+	f = plt.figure()
+	plt.plot(x,y)
+	#override create_root_element method of canvas by one of the functions above
+	#f.canvas.create_root_element = f.canvas.create_root_element.__get__(create_root_element2, f.canvas.__class__)
+	showPlot(f)
+
+def showPlot(f):
+	f.canvas.create_root_element = create_root_element2
+	f.canvas.show()
+
+def getLoadedDataAsStringIO():
+	return io.StringIO( document.reader.result )
+
+def getDatasetFromLocalUrl():
+	# just serve the file
+	return pyodide.open_url("local.csv")
+	#return pyodide.open_url("file:///home/jesse/Desktop/cheetah/pages/pyodide-build-0.14.3/local.csv")
+
+def run_query(q):
+	print("Received query: ",q)
+	print("Now do stuff with it!")
+	# get the plot div, run the query using time series script, display the plot.
+
+	df = pd.read_csv( getDatasetFromLocalUrl() )
+	series = df['Age']
+	f = plt.figure()
+	plt.plot(series)
+	showPlot(f)
+
+	#plotSomething()
+
+
+`);
+});
+});
+
+
+function getUrls() {
+	urls = [];
+	document.getElementById('url_results').childNodes.forEach(
+		function(urlEle){
+			urls.push(urlEle.innerText);
+		});
+
+	return urls;
+};
+
+function getAnalysis() {
+	return document.getElementById('analysis').value;
+};
+
+function runAnalysis() {
+	var urls = getUrls();
+	var analysis = getAnalysis();
+	var dateRange = "empty"; // FUTURE
+
+	console.log("Urls, analysis, dateRange: ", urls.join(","), analysis, dateRange);
+
+	var run_query = pyodide.pyimport('run_query');
+	run_query("{'abc':123}");
+};
+
+</script>
+
+
+
+
+<!--
+**********************************************************************************
+FUTURE: Date limits. Just use a <input type="date">
+**********************************************************************************
+-->
+
+
+
+
+<!--
+Python/Pyodide stuff
+
+  <script type="text/javascript">
+languagePluginLoader.then(() => {
+  // pyodide is now ready to use...
+  console.log(pyodide.runPython('print("hello")'));
+	pyodide.loadPackage(['matplotlib','pandas']).then(() => {
+	pyodide.runPython(`
+
+import numpy as np
+from matplotlib import pyplot as plt
+from js import document
+import pandas as pd
+import pyodide
+
+print("loading data...")
+# TODO: does not work, or just requires implementing http request handlers instead of using the simple http static-file server
+# options: 1) symlink to source data elsewhere 2) implement request handlers
+#data_url = "/../../relative.csv"
+data_url = "/local.csv"
+raw_data = pd.read_csv(pyodide.open_url(data_url), skiprows=1)
+print("Data: {}".format(str(raw_data)))
+
+
+
+x = np.linspace(0, 2*np.pi, 100)
+y = np.sin(x)
+
+f = plt.figure()
+plt.plot(x,y)
+
+# ordinary function to create a div
+def create_root_element1(self):
+    div = document.createElement('div')
+    document.body.appendChild(div)
+    return div
+
+#ordinary function to find an existing div
+#you'll need to put a div with appropriate id somewhere in the document
+def create_root_element2():
+    return document.getElementById('canvas_div')
+
+#override create_root_element method of canvas by one of the functions above
+#f.canvas.create_root_element = f.canvas.create_root_element.__get__(create_root_element2, f.canvas.__class__)
+f.canvas.create_root_element = create_root_element2
+
+f.canvas.show()
+print("Shown")
+
+`);
+
+//document.getElementById("pyplotfigure").src=pyodide.globals.img_str
+});
+
+});
+  </script>
+-->
+
+
+    <div id="textfield">A matplotlib figure:</div>
+    <div id="pyplotdiv"><img id="pyplotfigure"/></div>
+    <div id="canvas_div">Plot canvas div</div>
+</body>
