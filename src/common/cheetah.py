@@ -167,10 +167,10 @@ def cheetifyHeadline_optimized(headline, avgVec, sumPosUnitVec, sumNegUnitVec, m
 	"""
 	As shown in src/util/test/sum_of_dot_products, the inner summation over cosine similarity factors such
 	that the cheetah sentiment can be calculated by simply taking the dot product of the document's average
-	term-vector and the sum signal norm vector.
+	term-vector and the sum signal norm vectors.
 	That is:
 		-get the average document term vector, v_avg
-		-calculate the sum-of-unit vectors for the signal lexica: v_sig = Sigma[ v / |v| ]
+		-pre-calculate the sum-of-unit vectors for the signal lexica: v_sig = Sigma[ v / |v| ]
 		-return (v_avg dot v_sig) / |v_avg|
 	Note, that's the gist, but there may be errors in this description. But its mathematically sound, since
 	a double sum over cosine similarities factors to a far more efficient form than actually calculating the
@@ -194,7 +194,9 @@ def cheetifyHeadline_optimized(headline, avgVec, sumPosUnitVec, sumNegUnitVec, m
 	headline.Attrib["cheetah"] = sumSimilarity
 	return sumSimilarity
 
+"""
 # OBSOLETE: used optimized version instead; much of the math algebraically factors to a much simpler, faster form.
+# Leaving this here for reference only.
 def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 	avgVec[:] = 0.0
 	n = 0.0
@@ -220,6 +222,7 @@ def cheetifyHeadline(headline, avgVec, posCache, negCache, model):
 
 	headline.Attrib["cheetah"] = sumSimilarity
 	return sumSimilarity
+"""
 
 def filterLex(model, lexicon):
 	return [w for w in lexicon if w in model.wv]

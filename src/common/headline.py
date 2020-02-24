@@ -480,7 +480,8 @@ class Headline():
 	#A temporary hack to test/explore the harvard dataset
 	def BuildFromHarvardRecord(self, headline, dt, shareCount=0):
 		self.DT = dt
-		self.IsoWeek = self.DT.isocalendar()[1]
+		if self.DT is not None:
+			self.IsoWeek = self.DT.isocalendar()[1]
 		self.Headline = headline
 		self.Attrib["share_count"] = shareCount
 		return self

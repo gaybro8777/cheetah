@@ -174,11 +174,14 @@ def runCheetah(resultCollections):
 		normalizeScores=False)
 
 def harvardAnalyzeAndPersist():
-	opath = dataDir+"stories_election_web_cheetofied.csv"
-	csvPath = dataDir+"stories_election_web.csv"
+	# Use these for testing
+	opath = dataDir+"test_delete_me.csv"
+	csvPath = dataDir+"stories_election_web_test.csv"
+	# Use these for real runs
+	#opath = dataDir+"stories_election_web_cheetofied.csv"
+	#csvPath = dataDir+"stories_election_web.csv"
 	#opath = dataDir+"test.csv"
 	#csvPath = dataDir+"test_out.csv"
-	print("TODO: Test and retry without factoring avgVecNorm in cheetah to ensure the same result for the same input.")
 
 	if os.path.isfile(opath):
 		print("Output path already exists, and must be moved or deleted before running: {}".format(opath))

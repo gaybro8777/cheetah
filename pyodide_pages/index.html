@@ -16,6 +16,8 @@ TODO:
 		Objective: completely local data and analyses, no on-server analyses, no data transfer from server to client.
 		User clicks a load button, navigates to local file, selects it.
 
+	FOR NOW: Just serve the file, loading it in python directly using open_url(); on the server, link the dataset file with a hardlink.
+
 	- click Run, send query to python env
 	- receive query in python, run it
 	- render generated plot back in html
@@ -123,11 +125,20 @@ FILE LOADING COMPONENT
       progress.style.width = '100%';
       progress.textContent = '100%';
       setTimeout("document.getElementById('progress_bar').className='';", 2000);
+
+	  console.log(reader.result);
+
+	  var dataset = reader.result;
+	  function getDataset(){
+		return reader.result;
+		}
     }
 
     // Read in the file as a binary string.
-    reader.readAsBinaryString(evt.target.files[0]);
+    //reader.readAsBinaryString(evt.target.files[0]);
+	reader.readAsText(evt.target.files[0]);
   }
+
 
   document.getElementById('files').addEventListener('change', handleFileSelect, false);
 </script>
@@ -227,6 +238,8 @@ Do each of these with minimal working examples.
 -->
 
 <script type="text/javascript">
+
+
 languagePluginLoader.then(() => {
 	// pyodide is now ready to use...
 	console.log(pyodide.runPython('print("hello")'));
@@ -236,6 +249,7 @@ languagePluginLoader.then(() => {
 import numpy as np
 from matplotlib import pyplot as plt
 from js import document
+from js import reader
 import pandas as pd
 import pyodide
 import io #for stringio
@@ -267,21 +281,37 @@ def showPlot(f):
 def getLoadedDataAsStringIO():
 	return io.StringIO( document.reader.result )
 
-def getDatasetFromLocalUrl():
+# Temporary workaround, until I figure out how to do load data locally using FileReader.
+def getDatasetFromRemote():
+	return 
+
+def fetchDataset():
 	# just serve the file
-	return pyodide.open_url("local.csv")
+	return pyodide.open_url("stories.csv")
 	#return pyodide.open_url("file:///home/jesse/Desktop/cheetah/pages/pyodide-build-0.14.3/local.csv")
+
+def testData():
+	#fileEle = document.getElementById('files')
+	#print("fileresult: ", fileEle)
+	#print(getDataset())
+	print("reader: "+reader)
 
 def run_query(q):
 	print("Received query: ",q)
 	print("Now do stuff with it!")
 	# get the plot div, run the query using time series script, display the plot.
 
-	df = pd.read_csv( getDatasetFromLocalUrl() )
-	series = df['Age']
-	f = plt.figure()
-	plt.plot(series)
-	showPlot(f)
+	#testData()
+
+	dataset = fetchDataset()
+	print("Dataset: "+dataset[0:100])
+	df = pd.read_csv(dataset)
+	#series = df['Age']
+	#f = plt.figure()
+	#plt.plot(series)
+	#showPlot(f)
+	print("LOADED")
+
 
 	#plotSomething()
 
