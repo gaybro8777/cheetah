@@ -60,6 +60,7 @@ class CovidDocument(object):
 		self._dict[key] = value
 
 	def NormalizeText(self, textNormalizationFunc):
+		# Normalizes all text fields in the document. The changes are persisted.
 		#@normalizer: the text normalizer
 		# NOTE: This only normalizes the text fields of the document, not the authors, etc.
 
@@ -95,7 +96,7 @@ class CovidDocument(object):
 
 	def FullText(self):
 		# The FullText is just the concatenation of the title, abstract, and body text, delimited by '. ' to facilitate sentence breaking.
-		return ". ".join([self.Title(), self.Abstract(), self.BodyText()])
+		return self.Title()+". "+self.Abstract()+self.BodyText()
 
 	def WordSequence(self):
 		return [word for sentence in self.FullText().split(".") for word in sentence.split()]
@@ -129,7 +130,7 @@ class CovidDocument(object):
 
 		return success, doc
 
-class CovidDataset(object):
+class CovidDatasetFileStream(object):
 	def __init__(self, dataDir):
 		self._dataDir = dataDir
 
@@ -157,15 +158,25 @@ class CovidDataset(object):
 	def _getDataFilePaths(self):
 		return [os.path.join(self._dataDir, fname) for fname in os.listdir(self._dataDir)]
 
+"""
+# TODO" in-memory dataset
+class CovidDataset(object):
+	def __init__(self, dataDir):
+		self._loadDataset(dataDir)
+
+	def _loadDataset(self, dataDir):
+		return 
+"""
+
 class CovidDocumentStream(object):
 	def __init__(self, dataDir, limit, filterStopWords=True):
 		"""
-		@dataset: An iterable CovidDataset
+		@dataset: An iterable CovidDatasetFileStream
 		@limit: The number of sequences to generate before terminating the stream. If -1, then no limit (entire file).
 		"""
 		self._filterStopWords = filterStopWords
 		self._stopWords = self._loadStopWords()
-		self._dataset = CovidDataset(dataDir)
+		self._dataset = CovidDatasetFileStream(dataDir)
 		self._limit = limit
 		self._normalizer = AsciiTextNormalizer()
 
@@ -204,7 +215,10 @@ class CovidDocumentStream(object):
 		"""
 		text = self._normalizeSentenceDelimiters(text)
 		text = self._stripCitations(text)
-		return self._normalizer.NormalizeText(text, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+		periodAnchor = "qwerty12345" # a hack to back-replace periods after they are stripped by NormalizeText() with other punctuation
+		text = text.replace(".", periodAnchor)
+		text = self._normalizer.NormalizeText(text, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+		return text.replace(periodAnchor, ".")
 
 	def _dropStopWords(self, text):
 		# TODO: This is extremely slow: for every character in string, lookup in stopwords
@@ -238,14 +252,14 @@ class CovidDocumentStream(object):
 				fullText = self._dropStopWords(fullText)
 
 			for i, sentence in enumerate(fullText.split(".")):
-				#print(seq)
 				if len(sentence) > 2 and (self._limit < 0 or i < self._limit):
-					yield sentence
+					yield sentence.split()
 			docCount += 1
 			if docCount % 10 == 9:
 				print("Doc count: {}     \r".format(docCount), end="")
 
 def loadVectorModel(modelPath):
+	print("Loading model from ", modelPath)
 	#loads Word2Vec model; only w2v models are currently supported
 	if not (modelPath.endswith(".vec") or modelPath.endswith(".w2v")):
 		raise Exception("Only gensim/word2vec models are currently supported. Model path must end with '.vec'")
@@ -266,7 +280,7 @@ def getAverageTermVec(terms, model):
 			misses += 1
 
 	if hits == 0:
-		print("WARNING: term list contains no model hits in getAverageVec: ",terms)
+		print("WARNING: term list contains no model hits in getAverageVec: ", terms)
 
 	# TODO: hit count is very poor, about 10%
 	#print("Hits/misses: ",hits,misses)
@@ -279,21 +293,27 @@ def getAverageTermVec(terms, model):
 def vectorizeDataset(dataDir, vecModel):
 	# NOTE: The returned dataset will have its text normalized.
 	# Stores average vector in each document, normalizes each doc, and stores this modified dataset.
-	normalizer = AsciiTextNormalizer()
-
+	# TODO: Loads entire 1.2Gb dataset and returns all documents. Fine for most systems, probably not for others.
 	#TODO: add stopword removal
+	dataset = CovidDatasetFileStream(dataDir)
 
-	dataset = CovidDataset(dataDir)
+	normalizer = AsciiTextNormalizer()
+	def normalizeText(text):
+		text = re.sub("([\(\[]).*?([\)\]])", "\g<1>\g<2>", text)
+		return normalizer.NormalizeText(text, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
+
+	docs = []
 	for doc in dataset:
 		#normalize the document; this must be done consistently to maximize lookup hits; e.g. query "Foo" "foo" or "'fOo'" should ideally resolve to the term 'foo'.
-		doc.NormalizeText(lambda text: normalizer.NormalizeText(text, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True))
+		doc.NormalizeText(normalizeText)
 		docTerms = doc.WordSequence()
 		avgVec = getAverageTermVec(docTerms, vecModel)
 		#TODO: serialize vector
 		doc.AddRootKvp("vector", avgVec)
+		docs.append(doc)
 
 	#TODO: persist vectorized dataset? Do after gain confidence in doc-search
-	return dataset
+	return docs
 
 def isEmptyDir(dirPath):
 	return len(os.listdir(dirPath)) == 0
@@ -314,11 +334,11 @@ def buildWordVectorModel(dataDir, savePath=None):
 	#A wrapper that just hardcodes params used in VecSent project. These have hyper-parameters have not been optimized, they are just standard w2v params.
 	limit=-1 #iterates all sequences; no cut-off
 	vecSize=350
-	numIterations=10
+	numIterations=64
 	minTermFrequency=1
-	windowSize=3
+	windowSize=8 # author recommendation for cbow is 5; 3 for skipgram. VecSent experiment suggests much larger, e.g. 20.
 	workers=1
-	model="SKIPGRAM"
+	model="CBOW" # or SKIPGRAM
 	#**************************************************************************************************************************************
 	seqStream = CovidDocumentStream(dataDir, limit, filterStopWords=True)
 	print("Building word-to-vec word-vector model...")
@@ -354,20 +374,25 @@ def main():
 	# Convert dataset to vectorized form
 	# Query it
 
+	#TODO: Design/refactoring: I'm thinking it might be better to save the normalized dataset during training, to preserve link between training text and trained model.
+	# Better: separate normalization out into common code?
+
 	#TODO: stopwords
 	dataDir = "../../../covid/dataset/comm_use_subset/"
 	newDataDir = "../../../covid/dataset/normalized_vec_dataset/"
 	vecModel = buildWordVectorModel(dataDir, "./covid_temp.w2v")
 	# TODO: this is temporary. Break out training and search paths
 	#vecModel = loadVectorModel("../../models/covid/400d_iter10_window3_sg.w2v")
-	dataset = vectorizeDataset(dataDir, vecModel)
-	persistDataset(dataset, newDataDir)
+	#vecModel = loadVectorModel("../../models/covid/350d_10iter_1minfreq_3window_skip_nostopwords.w2v")
+	vecModel = loadVectorModel("./covid_temp.w2v")
+	docs = vectorizeDataset(dataDir, vecModel)
+	#persistDataset(dataset, newDataDir)
 	normalizer = AsciiTextNormalizer()
 
 	while True:
 		query = userQuery(normalizer, vecModel)
 		query = [normalizer.NormalizeText(queryTerm) for queryTerm in query]
-		results = runQuery(query, dataset, vecModel)
+		results = runQuery(query, docs, vecModel)
 		print(str(results[0:100]))
 
 if __name__ == "__main__":
