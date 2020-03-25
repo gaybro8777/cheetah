@@ -296,6 +296,7 @@ def vectorizeDataset(dataDir, vecModel):
 	# TODO: Loads entire 1.2Gb dataset and returns all documents. Fine for most systems, probably not for others.
 	#TODO: add stopword removal
 	dataset = CovidDatasetFileStream(dataDir)
+	print("Vectorizing dataset...")
 
 	normalizer = AsciiTextNormalizer()
 	def normalizeText(text):
@@ -331,7 +332,7 @@ def persistDataset(dataset, outputDir):
 
 def buildWordVectorModel(dataDir, savePath=None):
 	#**************************************************************************************************************************************
-	#A wrapper that just hardcodes params used in VecSent project. These have hyper-parameters have not been optimized, they are just standard w2v params.
+	#A wrapper that just hardcodes params used in VecSent project. These have hyper-parameters have not been optimized, they are just standard w2v params based on Cheetah.
 	limit=-1 #iterates all sequences; no cut-off
 	vecSize=350
 	numIterations=64
@@ -367,7 +368,22 @@ def runQuery(queryTerms, dataset, model):
 	queryVec = getAverageTermVec(queryTerms, model)
 	queryVecNorm = np.linalg.norm(queryVec)
 	scoredDocs = [(doc, scoreDoc(queryVec, queryVecNorm, doc)) for doc in dataset]
-	return sorted(scoredDocs, key=lambda t: t[1])
+	return sorted(scoredDocs, key=lambda t: t[1], reverse=True)
+
+def cossim(v1, v2):
+	# Calculates the cosine-similarity between vectors v1 and v2.
+	# NOTE: cossim is very inefficient, and often factors such that values can be precomputed/cached if you do your math.
+	return v1.dot(v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+def runTermQuery(queryTerms, vecModel):
+	# Returns all of model.vocab ranked by cosine-similarity with @queryTerms
+	if not any([queryTerm in vecModel.wv.vocab for queryTerm in vecModel]):
+		print("Not query terms found in vector model: ", queryTerms)
+		return []
+
+	avgQueryVec = getAverageTermVec(queryTerms, vecModel)
+	rankedTerms = [(modelTerm, cossim(avgQueryVec, model.wv[modelTerm])) for modelTerm in model.wv.vocab]
+	return sorted(rankedTerms, key=lambda t: t[1], reverse=True)
 
 def main():
 	# Train a word-2-vec model on covid-dataset, persist it.
@@ -380,7 +396,7 @@ def main():
 	#TODO: stopwords
 	dataDir = "../../../covid/dataset/comm_use_subset/"
 	newDataDir = "../../../covid/dataset/normalized_vec_dataset/"
-	vecModel = buildWordVectorModel(dataDir, "./covid_temp.w2v")
+	#vecModel = buildWordVectorModel(dataDir, "./covid_temp.w2v")
 	# TODO: this is temporary. Break out training and search paths
 	#vecModel = loadVectorModel("../../models/covid/400d_iter10_window3_sg.w2v")
 	#vecModel = loadVectorModel("../../models/covid/350d_10iter_1minfreq_3window_skip_nostopwords.w2v")
@@ -389,11 +405,15 @@ def main():
 	#persistDataset(dataset, newDataDir)
 	normalizer = AsciiTextNormalizer()
 
+	# query forever; just a test
 	while True:
+		print("\n\n\n")
 		query = userQuery(normalizer, vecModel)
 		query = [normalizer.NormalizeText(queryTerm) for queryTerm in query]
+		#termResults = runTermQuery(query, vecModel)
 		results = runQuery(query, docs, vecModel)
-		print(str(results[0:100]))
+		for i, result in enumerate(results[0:100]):
+			print(result[1], result[0].Abstract())
 
 if __name__ == "__main__":
 	main()
