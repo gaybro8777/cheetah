@@ -304,6 +304,7 @@ def vectorizeDataset(dataDir, vecModel):
 		return normalizer.NormalizeText(text, filterNonAlphaNum=True, deleteFiltered=False, lowercase=True)
 
 	docs = []
+	#i = 0
 	for doc in dataset:
 		#normalize the document; this must be done consistently to maximize lookup hits; e.g. query "Foo" "foo" or "'fOo'" should ideally resolve to the term 'foo'.
 		doc.NormalizeText(normalizeText)
@@ -312,6 +313,11 @@ def vectorizeDataset(dataDir, vecModel):
 		#TODO: serialize vector
 		doc.AddRootKvp("vector", avgVec)
 		docs.append(doc)
+		i += 1
+
+	#	if i > 100:
+	#		print("TODO: delete me")
+	#		break
 
 	#TODO: persist vectorized dataset? Do after gain confidence in doc-search
 	return docs
@@ -377,12 +383,12 @@ def cossim(v1, v2):
 
 def runTermQuery(queryTerms, vecModel):
 	# Returns all of model.vocab ranked by cosine-similarity with @queryTerms
-	if not any([queryTerm in vecModel.wv.vocab for queryTerm in vecModel]):
+	if not any([queryTerm in vecModel.wv.vocab for queryTerm in queryTerms]):
 		print("Not query terms found in vector model: ", queryTerms)
 		return []
 
 	avgQueryVec = getAverageTermVec(queryTerms, vecModel)
-	rankedTerms = [(modelTerm, cossim(avgQueryVec, model.wv[modelTerm])) for modelTerm in model.wv.vocab]
+	rankedTerms = [(modelTerm, cossim(avgQueryVec, vecModel.wv[modelTerm])) for modelTerm in vecModel.wv.vocab]
 	return sorted(rankedTerms, key=lambda t: t[1], reverse=True)
 
 def main():
@@ -411,7 +417,16 @@ def main():
 		query = userQuery(normalizer, vecModel)
 		query = [normalizer.NormalizeText(queryTerm) for queryTerm in query]
 		#termResults = runTermQuery(query, vecModel)
+		print("Querying related terms...")
+		termResults = runTermQuery(query, vecModel)
+		print("Most-related terms:")
+		for i, termResult in enumerate(termResults):
+			print(termResult[1], ": "+termResult[0])
+
+		#TODO: query most-related authors, author groups
+		print("Querying documents...")
 		results = runQuery(query, docs, vecModel)
+		print("Most-related documents:")
 		for i, result in enumerate(results[0:100]):
 			print(result[1], result[0].Abstract())
 
