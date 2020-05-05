@@ -382,7 +382,7 @@ def cossim(v1, v2):
 	return v1.dot(v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 def runTermQuery(queryTerms, vecModel):
-	# Returns all of model.vocab ranked by cosine-similarity with @queryTerms
+	# Returns all of model.vocab ranked by cosine-similarity wrt @queryTerms
 	if not any([queryTerm in vecModel.wv.vocab for queryTerm in queryTerms]):
 		print("Not query terms found in vector model: ", queryTerms)
 		return []

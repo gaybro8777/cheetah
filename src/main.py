@@ -26,6 +26,7 @@ from util.fasttext_downloader import FastTextDownloader
 from util.file_splitter import GzSplitter
 # TODO: Factor cheetah munge code into first-class code/classes
 import scripts.topical_sentiment_series as cheetah_munging
+import scripts.covid_search as covid_search
 
 
 dataDir = "../data/"
@@ -175,11 +176,11 @@ def runCheetah(resultCollections):
 
 def harvardAnalyzeAndPersist():
 	# Use these for testing
-	opath = dataDir+"test_delete_me.csv"
-	csvPath = dataDir+"stories_election_web_test.csv"
+	#opath = dataDir+"test_delete_me.csv"
+	#csvPath = dataDir+"stories_election_web_test.csv"
 	# Use these for real runs
-	#opath = dataDir+"stories_election_web_cheetofied.csv"
-	#csvPath = dataDir+"stories_election_web.csv"
+	opath = dataDir+"stories_election_web_cheetofied2.csv"
+	csvPath = dataDir+"stories_election_web.csv"
 	#opath = dataDir+"test.csv"
 	#csvPath = dataDir+"test_out.csv"
 
@@ -283,6 +284,10 @@ def unzipHarvardData():
 	else:
 		print("Cheetah-fied shorenstein 2016 web content data successfully exported to "+shorensteinDir)
 
+def covidSearch():
+	covid_search.run()
+
+
 def cheetahHarvardAnalysis():
 	cheetah_munging.seriesMunging()
 
@@ -295,7 +300,7 @@ def printIntro():
                 \____/_/ /_/_____/_____/ /_/ /_/  |_/_/ /_/  
 
 
-                           Never trust--only verify.
+                           Verify--then trust.
 
 
 Welcome to Cheetah, a cousin of the ABLE-ITEM deep web content extractor and Sentinel analysis
@@ -308,7 +313,7 @@ perhaps funner) nlp stuff. This interface is primarily for algorithmic/dataset r
 To execute cheetah repro, begin by downloading the fasttext english '.text' model (option 0).
 Then run Cheetah analysis (options 1 and 2).
 """
-	"""
+"""
 Upcoming analyses:
 1) Vector model algebraic analysis: analyzing the prior bias built into vector space language
 	models due to input data bias.
@@ -342,6 +347,7 @@ def mainMenu():
 	printIntro()
 
 	cmds = [
+		(covidSearch, "Search covid documents"),
 		(downloadEnglishModel, "Download English FastText model"),
 		(cheetahAbleAnalysis, "Cheetah ABLE-data analysis"),
 		(cheetahHarvardAnalysis, "Cheetah Harvard-Shorenstein offline analysis (use this one)"),

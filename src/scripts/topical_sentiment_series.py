@@ -35,9 +35,9 @@ def convertPublishDate(df):
 
 def loadData():
 	#TODO: only read columns of interest. This reads tons on unused data.
-	dataPath = "../../data/stories_election_web_cheetofied.csv"
+	dataPath = "../../data/stories_election_web_cheetofied2.csv"
 	if not os.path.isfile(dataPath):
-		dataPath = "../data/stories_election_web_cheetofied.csv"
+		dataPath = "../data/stories_election_web_cheetofied2.csv"
 
 	print("Loading dataset from "+dataPath)
 	df = pd.read_csv(dataPath, header=0)

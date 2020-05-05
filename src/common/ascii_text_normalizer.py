@@ -102,7 +102,6 @@ class AsciiTextNormalizer(object):
 			#replaces filtered characters with blank spaces
 			return s.translate(self._stripCharTable_BlankReplacement)
 
-
 	def DecodeInTextLinks(self, s):
 		"""
 		Text from social media or other sites often contains <a> tags or other tags (<strong>, etc) within the text itself
