@@ -47,11 +47,13 @@ class Review(object):
 	# Important note: I hacked this to satisfy the same interface as Headline in cheetah.py: FullText() and Attrib
 	def __init__(self, source="", text="", binClass=0.0):
 		self.Source = "" #file name or path
-		self.GetFullText = "" # full text
+		self.FullText = "" # full text
 		self.Vector = None
 		self.Sentiment = 0.0
 		self.Class = binClass # 1 or -1 binary class label
 		self.Attrib = dict() # other data
+	def GetFullText(self):
+		return self.FullText
 
 # future
 class ImdbDataset(object):
@@ -62,15 +64,18 @@ class ImdbDataset(object):
 
 	def __iter__(self):
 		# Iterates all reviews in the dataset, test and train
-		for review in self.GetTrainingSet():
-			yield review
-		for review in self.GetTestSet():
-			yield review
 
-	def GetTrainingSet():
+		for kvp in self.GetTrainingSets().items():
+			for review in kvp[1]:
+				yield review
+		for kvp in self.GetTestSets().items():
+			for review in kvp[1]:
+				yield review
+
+	def GetTrainingSets(self):
 		return self._data["train"]
 
-	def GetTestSet():
+	def GetTestSets(self):
 		return self._data["test"]
 
 	def Read(self, rootFolder):
@@ -134,7 +139,7 @@ def loadSentimentLexicon(sentFolder):
 
 # Taken from cheetah
 def loadFastTextModel():
-	modelPath = os.path.join(modelDir, "english/cc.en.300.vec")
+	modelPath = os.path.join(modelDir, "cc.en.300.vec")
 	if not os.path.exists(modelPath):
 		raise Exception("ERROR: model not found at {}. Select 'Download fasttext model' in main menu to download model before running analysis.".format(modelPath))
 
@@ -188,7 +193,7 @@ def cheetifyDataset(vectorizedDataset):
 	model = loadFastTextModel()
 	reviews = [review for review in vectorizedDataset]
 
-	analysis3(model, reviews, sentLex)
+	cheetah.analysis3(model, reviews, sentLex)
 
 	return vectorizedDataset
 
@@ -199,7 +204,7 @@ def oneDimCheetahLogisticRegression(dataset):
 	# This is just for fun. It should actually work! Just iterate over different sentiment lexica generated from the training data.
 
 	# Convert training data to one column "matrix"
-	trainingData = dataset.GetTrainingSet()
+	trainingData = dataset.GetTrainingSets()
 	sentimentScores = np.matrix([review.Sentiment for review in trainingData])
 	targets = 		  np.matrix([review.Class     for review in trainingData])
 
@@ -236,7 +241,7 @@ def oneDimCheetahLogisticRegression(dataset):
 """
 
 dataset = ImdbDataset(dataDir)
-
+cheetifyDataset(dataset)
 
 
 
